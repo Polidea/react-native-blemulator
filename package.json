@@ -1,0 +1,39 @@
+{
+  "name": "react-native-blemulator",
+  "title": "React Native BLEmulator",
+  "version": "0.0.1",
+  "description": "BLE simulator for react-native-ble-plx",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/github_account/react-native-blemulator.git",
+    "baseUrl": "https://github.com/github_account/react-native-blemulator"
+  },
+  "keywords": [
+    "react-native",
+    "bluetooth low energy",
+    "ble"
+  ],
+  "author": {
+    "name": "Polidea",
+    "email": "hello@polidea.com"
+  },
+  "license": "MIT",
+  "licenseFilename": "LICENSE",
+  "readmeFilename": "README.md",
+  "peerDependencies": {
+    "react": "^16.8.1",
+    "react-native": ">=0.60.0-rc.0 <1.0.x"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.34",
+    "@types/react-native": "^0.62.4",
+    "react": "^16.9.0",
+    "react-native": "^0.61.5",
+    "react-native-typescript-transformer": "^1.2.13",
+    "typescript": "^3.8.3"
+  }
+}
