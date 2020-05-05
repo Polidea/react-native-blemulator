@@ -22,6 +22,7 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React"
+  s.dependency 'MultiplatformBleAdapter', '~> 0.1.5'
   # ...
   # s.dependency "..."
 end
