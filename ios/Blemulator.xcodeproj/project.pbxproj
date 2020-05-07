@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1033FA1B24642D06003B0C50 /* SimulatedAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */; };
 		320F8AB317FF97AAD1EA62E8 /* Pods_Blemulator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81432FA2EACC1C10AF962CAB /* Pods_Blemulator.framework */; };
 		B3E7B58A1CC2AC0600A0062D /* Blemulator.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E7B5891CC2AC0600A0062D /* Blemulator.m */; };
 /* End PBXBuildFile section */
@@ -25,6 +26,9 @@
 
 /* Begin PBXFileReference section */
 		09473796EC6DD87C2E56F92D /* Pods-Blemulator.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Blemulator.debug.xcconfig"; path = "Target Support Files/Pods-Blemulator/Pods-Blemulator.debug.xcconfig"; sourceTree = "<group>"; };
+		1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SimulatedAdapter.m; sourceTree = "<group>"; };
+		10D74E8F24644F7B00C37BC0 /* SimulatedAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimulatedAdapter.h; sourceTree = "<group>"; };
+		10D74E91246453F700C37BC0 /* BlemulatorCommonTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BlemulatorCommonTypes.h; sourceTree = "<group>"; };
 		134814201AA4EA6300B7C361 /* libBlemulator.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libBlemulator.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		81432FA2EACC1C10AF962CAB /* Pods_Blemulator.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Blemulator.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B3E7B5881CC2AC0600A0062D /* Blemulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Blemulator.h; sourceTree = "<group>"; };
@@ -44,6 +48,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		10D74E90246453DC00C37BC0 /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				10D74E91246453F700C37BC0 /* BlemulatorCommonTypes.h */,
+			);
+			path = Util;
+			sourceTree = "<group>";
+		};
 		134814211AA4EA7D00B7C361 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -55,6 +67,9 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				10D74E90246453DC00C37BC0 /* Util */,
+				10D74E8F24644F7B00C37BC0 /* SimulatedAdapter.h */,
+				1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */,
 				B3E7B5881CC2AC0600A0062D /* Blemulator.h */,
 				B3E7B5891CC2AC0600A0062D /* Blemulator.m */,
 				134814211AA4EA7D00B7C361 /* Products */,
@@ -69,7 +84,6 @@
 				09473796EC6DD87C2E56F92D /* Pods-Blemulator.debug.xcconfig */,
 				BED41AD463CFE11F084C21B4 /* Pods-Blemulator.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -121,6 +135,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 58B511D21A9E6C8500147676;
@@ -163,6 +178,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1033FA1B24642D06003B0C50 /* SimulatedAdapter.m in Sources */,
 				B3E7B58A1CC2AC0600A0062D /* Blemulator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
