@@ -68,11 +68,13 @@ repositories {
     }
     google()
     jcenter()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'  // From node_modules
+    implementation 'com.github.Polidea:MultiPlatformBleAdapter:0.1.5'
 }
 
 def configureReactNativePom(def pom) {
