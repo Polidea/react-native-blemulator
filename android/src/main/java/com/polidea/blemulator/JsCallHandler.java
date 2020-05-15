@@ -1,4 +1,4 @@
-package com.reactlibrary;
+package com.polidea.blemulator;
 
 import java.util.HashMap;
 import java.util.Map;

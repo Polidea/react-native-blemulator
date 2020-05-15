@@ -1,6 +1,6 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
 
-const BlemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
+const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 const _METHOD_CALL_EVENT = "MethodCall"
 
@@ -23,7 +23,7 @@ export class Blemulator {
     private emitterSubscription: EmitterSubscription;
 
     constructor() {
-        const emitter: NativeEventEmitter = new NativeEventEmitter(BlemulatorModule)
+        const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
             _METHOD_CALL_EVENT,
             (args: MethodCallArguments) => {
@@ -39,10 +39,10 @@ export class Blemulator {
     }
 
     runNativeToJsCommunicationTest() {
-        BlemulatorModule.runTest()
+        blemulatorModule.runTest()
     }
 
     private test(callbackId: String) {
-        BlemulatorModule.handleReturnCall(callbackId, JSON.stringify({ testProperty: "test value" }))
+        blemulatorModule.handleReturnCall(callbackId, JSON.stringify({ testProperty: "test value" }))
     }
 }
