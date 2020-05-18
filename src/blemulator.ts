@@ -27,6 +27,7 @@ export class Blemulator {
         this.emitterSubscription = emitter.addListener(
             _METHOD_CALL_EVENT,
             (args: MethodCallArguments) => {
+                console.log(`Requested method: ${args.methodName}`)
                 switch (args.methodName) {
                     case MethodName.test:
                         this.test(args.callbackId);
