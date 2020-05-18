@@ -1,5 +1,6 @@
 #import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 
-@interface Blemulator : NSObject <RCTBridgeModule>
+@interface Blemulator : RCTEventEmitter <RCTBridgeModule>
 
 @end
