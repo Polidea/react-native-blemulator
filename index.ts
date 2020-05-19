@@ -1,1 +1,1 @@
-export { Blemulator } from './src/blemulator';
+export { blemulator, Blemulator } from './src/blemulator';
