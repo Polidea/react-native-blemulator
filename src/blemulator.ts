@@ -15,8 +15,8 @@ interface MethodCallArguments {
     callbackId: String
 }
 
-const MethodName = {
-    test: "test",
+enum MethodName {
+    TEST = "test",
 }
 
 export class Blemulator {
@@ -29,10 +29,11 @@ export class Blemulator {
             (args: MethodCallArguments) => {
                 console.log(`Requested method: ${args.methodName}`)
                 switch (args.methodName) {
-                    case MethodName.test:
-                        this.test(args.callbackId);
+                    case MethodName.TEST:
+                        this.test(args.callbackId)
+                        break
                     default:
-                        console.log("Uknown method requested");
+                        console.log("Uknown method requested")
 
                 }
             },
@@ -44,6 +45,7 @@ export class Blemulator {
     }
 
     private test(callbackId: String) {
+        console.log(`Handling call ${callbackId} in JS`)
         blemulatorModule.handleReturnCall(callbackId, JSON.stringify({ testProperty: "test value" }))
     }
 }
