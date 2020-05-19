@@ -1,5 +1,7 @@
 package com.polidea.blemulator;
 
+import com.facebook.react.bridge.ReadableMap;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,20 +19,20 @@ public class JsCallHandler {
         return callId;
     }
 
-    public void handleReturnCall(String id, String jsonString) {
-        if (callbacks.containsKey(id)) {
-            Callback callback = callbacks.get(id);
-            if (callback == null) {
-                throw new IllegalStateException("Callback not set for provided id " + id);
-            }
-            callback.invoke(jsonString);
-            callbacks.remove(id);
-        } else {
+    public void handleReturnCall(String id, ReadableMap args) {
+        if (!callbacks.containsKey(id)) {
             throw new IllegalStateException("Unknown callback ID " + id);
         }
+
+        Callback callback = callbacks.get(id);
+        if (callback == null) {
+            throw new IllegalStateException("Callback not set for provided id " + id);
+        }
+        callback.invoke(args);
+        callbacks.remove(id);
     }
 
     interface Callback {
-        void  invoke(String jsonString);
+        void  invoke(ReadableMap args);
     }
 }

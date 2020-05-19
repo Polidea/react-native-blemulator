@@ -6,7 +6,7 @@ const _METHOD_CALL_EVENT = "MethodCall"
 
 interface BlemulatorModuleInterface {
     runTest(): void,
-    handleReturnCall(callbackId: String, jsonString: String): void,
+    handleReturnCall(callbackId: String, jsonString: Object): void,
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
 }
 
@@ -19,7 +19,7 @@ enum MethodName {
     TEST = "test",
 }
 
-export class Blemulator {
+class BlemulatorInstance {
     private emitterSubscription: EmitterSubscription;
 
     constructor() {
@@ -46,6 +46,10 @@ export class Blemulator {
 
     private test(callbackId: String) {
         console.log(`Handling call ${callbackId} in JS`)
-        blemulatorModule.handleReturnCall(callbackId, JSON.stringify({ testProperty: "test value" }))
+        blemulatorModule.handleReturnCall(callbackId, { testProperty: "test value" })
     }
 }
+
+export interface Blemulator extends BlemulatorInstance {}
+
+export const blemulator: Blemulator = new BlemulatorInstance()

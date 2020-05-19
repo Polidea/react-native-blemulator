@@ -40,8 +40,8 @@ public class PlatformToJsBridge {
                     Log.d(TAG, "Calling JS method, call index: " + index);
                     JsCallHandler.Callback callback = new JsCallHandler.Callback() {
                         @Override
-                        public void invoke(String jsonString) {
-                            Log.d(TAG, "Returning call: " + index + " | Received data: " + jsonString);
+                        public void invoke(ReadableMap args) {
+                            Log.d(TAG, "Returning call: " + index + " | Received data: " + args.getString("testProperty"));
                         }
                     };
                     callMethod(MethodName.TEST, null, callback);
