@@ -9,6 +9,7 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.polidea.multiplatformbleadapter.OnErrorCallback;
 
 import androidx.annotation.Nullable;
 
@@ -48,7 +49,17 @@ public class PlatformToJsBridge {
                 }
             }, i * 1000);
         }
+    }
 
+    public void startScan(String[] filteredUUIDs,
+                          int scanMode,
+                          int callbackType,
+                          OnErrorCallback onErrorCallback) {
+        //TODO
+    }
+
+    public void stopScan() {
+        //TODO
     }
 
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {

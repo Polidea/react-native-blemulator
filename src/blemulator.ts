@@ -1,22 +1,26 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
+import { ScanResult } from './scan-result'
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 const _METHOD_CALL_EVENT = "MethodCall"
 
 interface BlemulatorModuleInterface {
-    runTest(): void,
-    handleReturnCall(callbackId: String, jsonString: Object): void,
+    runTest(): void
+    handleReturnCall(callbackId: String, jsonString: Object): void
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
+    addScanResult(scanResult: ScanResult): void
 }
 
 interface MethodCallArguments {
-    methodName: String,
+    methodName: String
     callbackId: String
 }
 
 enum MethodName {
     TEST = "test",
+    START_SCAN = "startScan",
+    STOP_SCAN = "stopScan",
 }
 
 class BlemulatorInstance {
@@ -31,6 +35,12 @@ class BlemulatorInstance {
                 switch (args.methodName) {
                     case MethodName.TEST:
                         this.test(args.callbackId)
+                        break
+                    case MethodName.START_SCAN:
+                        //TOOD
+                        break
+                    case MethodName.STOP_SCAN:
+                        //TODO
                         break
                     default:
                         console.log("Uknown method requested")
