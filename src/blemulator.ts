@@ -8,6 +8,7 @@ interface BlemulatorModuleInterface {
     runTest(): void,
     handleReturnCall(callbackId: String, jsonString: Object): void,
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
+    simulate(): void
 }
 
 interface MethodCallArguments {
@@ -34,7 +35,6 @@ class BlemulatorInstance {
                         break
                     default:
                         console.log("Uknown method requested")
-
                 }
             },
         )
@@ -42,6 +42,11 @@ class BlemulatorInstance {
 
     runNativeToJsCommunicationTest() {
         blemulatorModule.runTest()
+    }
+
+    simulate() {
+        console.log(`Turn on simulation mode`)
+        blemulatorModule.simulate()
     }
 
     private test(callbackId: String) {
