@@ -61,7 +61,7 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void addScanResult(ReadableMap scanResult) {
-        ScanResult result = new ScanResult(); //TODO
+        ScanResult result = new ScanResult(); //TODO parse readable map
         adapter.addScanResult(result);
     }
 

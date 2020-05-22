@@ -1,5 +1,6 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
 import { ScanResult } from './scan-result'
+import { SimulationManager } from './simulation-manager';
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
@@ -25,8 +26,11 @@ enum MethodName {
 
 class BlemulatorInstance {
     private emitterSubscription: EmitterSubscription;
+    private manager: SimulationManager
 
     constructor() {
+        this.manager = new SimulationManager()
+
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
             _METHOD_CALL_EVENT,
@@ -37,14 +41,13 @@ class BlemulatorInstance {
                         this.test(args.callbackId)
                         break
                     case MethodName.START_SCAN:
-                        //TOOD
+                        this.manager.startScan((scanResult) => { blemulatorModule.addScanResult(scanResult) })
                         break
                     case MethodName.STOP_SCAN:
-                        //TODO
+                        this.manager.stopScan()
                         break
                     default:
                         console.log("Uknown method requested")
-
                 }
             },
         )
