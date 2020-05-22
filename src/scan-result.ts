@@ -2,38 +2,38 @@ export type Base64 = String
 export type UUID = String
 
 export class ScanResult {
-    isConnectable: boolean | null
     id: String
-    name: String | null
-    localName: String | null
-    manufacturerData: Base64 | null
-    serviceData: { [uuid: String]: Base64 } | null
-    serviceUuids: Array<UUID> | null
-    solicitedServiceUuids: Array<UUID> | null
-    overflowServiceUuids: Array<UUID> | null
-    txPowerLevel: number | null
+    name?: String
+    localName?: String
+    isConnectable?: boolean
+    manufacturerData?: Base64
+    serviceData?: { [uuid: UUID]: Base64 }
+    serviceUuids?: Array<UUID>
+    solicitedServiceUuids?: Array<UUID>
+    overflowServiceUuids?: Array<UUID>
+    txPowerLevel?: number
 
-    constructor(
+    constructor(args: {
         id: String,
-        isConnectable: boolean | null = null,
-        name: String | null,
-        localName: String | null,
-        manufacturerData: Base64 | null,
-        serviceData: { [uuid: String]: Base64 } | null,
-        serviceUuids: Array<UUID> | null,
-        solicitedServiceUuids: Array<UUID> | null,
-        overflowServiceUuids: Array<UUID> | null,
-        txPowerLevel: number | null
-    ) {
-        this.id = id
-        this.isConnectable = isConnectable
-        this.name = name
-        this.localName = localName
-        this.manufacturerData = manufacturerData
-        this.serviceData = serviceData
-        this.serviceUuids = serviceUuids
-        this.solicitedServiceUuids = solicitedServiceUuids
-        this.overflowServiceUuids = overflowServiceUuids
-        this.txPowerLevel = txPowerLevel
+        isConnectable?: boolean,
+        name?: String,
+        localName?: String,
+        manufacturerData?: Base64,
+        serviceData?: { [uuid: UUID]: Base64 },
+        serviceUuids?: Array<UUID>,
+        solicitedServiceUuids?: Array<UUID>,
+        overflowServiceUuids?: Array<UUID>,
+        txPowerLevel?: number
+    }) {
+        this.id = args.id
+        this.isConnectable = args.isConnectable
+        this.name = args.name
+        this.localName = args.localName
+        this.manufacturerData = args.manufacturerData
+        this.serviceData = args.serviceData
+        this.serviceUuids = args.serviceUuids
+        this.solicitedServiceUuids = args.solicitedServiceUuids
+        this.overflowServiceUuids = args.overflowServiceUuids
+        this.txPowerLevel = args.txPowerLevel
     }
 }

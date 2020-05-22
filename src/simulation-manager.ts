@@ -3,7 +3,7 @@ import { ScanResult } from './scan-result'
 export type ScanResultListener = (scanResult: ScanResult) => void
 
 export class SimulationManager {
-    private addScanResult: ScanResultListener = () => {}
+    private addScanResult: ScanResultListener = () => { }
     private intervalHandles: Array<number> = []
 
     startScan(addScanResult: ScanResultListener) {
@@ -19,12 +19,16 @@ export class SimulationManager {
 
     private scanningStub() {
         const advertisementIntervalMs = 500;
-        
-        const handle = setInterval(() => { 
-            this.addScanResult(new ScanResult())
-         },
-         advertisementIntervalMs)
 
-         this.intervalHandles.push(handle)
+        const handle = setInterval(
+            () => {
+                this.addScanResult(new ScanResult(
+                    { id: "test id", }
+                ))
+            },
+            advertisementIntervalMs,
+        )
+
+        this.intervalHandles.push(handle)
     }
 }
