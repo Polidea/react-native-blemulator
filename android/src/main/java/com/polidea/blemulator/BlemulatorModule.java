@@ -1,5 +1,6 @@
 package com.polidea.blemulator;
 
+import android.util.Base64;
 import android.util.Log;
 
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -7,7 +8,13 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
+import com.polidea.blemulator.parser.ReadableArrayToListParser;
+import com.polidea.blemulator.parser.ReadableMapToMapParser;
+import com.polidea.multiplatformbleadapter.AdvertisementData;
 import com.polidea.multiplatformbleadapter.ScanResult;
+
+import java.util.List;
+import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -61,7 +68,30 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void addScanResult(ReadableMap scanResult) {
-        ScanResult result = new ScanResult(); //TODO parse readable map
+        //TODO handle errors (#12)
+
+        List<UUID> overflowServiceUuidsList = ReadableArrayToListParser.parse(scanResult.getArray("overflowServiceUuids"));
+        UUID[] overflowServiceUuids = null;
+        if (overflowServiceUuidsList != null) {
+            overflowServiceUuids = overflowServiceUuidsList.toArray(new UUID[overflowServiceUuidsList.size()]);
+        }
+
+        ScanResult result = new ScanResult(
+                scanResult.getString("id"),
+                scanResult.getString("name"),
+                scanResult.getInt("rssi"),
+                -1,
+                scanResult.getBoolean("isConnectable"),
+                overflowServiceUuids,
+                new AdvertisementData(
+                        Base64.decode(scanResult.getString("manufacturerData"), 0),
+                        ReadableMapToMapParser.parse(scanResult.getMap("servicaData")),
+                        ReadableArrayToListParser.parse(scanResult.getArray("serviceUuids")),
+                        scanResult.getString("localName"),
+                        scanResult.getInt("txPowerLevel"),
+                        ReadableArrayToListParser.parse(scanResult.getArray("solicitedServiceUuids"))
+                )
+        );
         adapter.addScanResult(result);
     }
 

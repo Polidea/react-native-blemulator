@@ -4,7 +4,7 @@ export type ScanResultListener = (scanResult: ScanResult) => void
 
 export class SimulationManager {
     private addScanResult: ScanResultListener = () => { }
-    private intervalHandles: Array<number> = []
+    private advertisementIntervalHandles: Array<number> = []
 
     startScan(addScanResult: ScanResultListener) {
         this.addScanResult = addScanResult
@@ -12,8 +12,8 @@ export class SimulationManager {
     }
 
     stopScan() {
-        while (this.intervalHandles.length > 0) {
-            clearInterval(this.intervalHandles.pop())
+        while (this.advertisementIntervalHandles.length > 0) {
+            clearInterval(this.advertisementIntervalHandles.pop())
         }
     }
 
@@ -23,12 +23,16 @@ export class SimulationManager {
         const handle = setInterval(
             () => {
                 this.addScanResult(new ScanResult(
-                    { id: "test id", }
+                    { 
+                        id: "test id",
+                        localName: "SensorTag",
+                        name: "SensorTag",
+                    }
                 ))
             },
             advertisementIntervalMs,
         )
 
-        this.intervalHandles.push(handle)
+        this.advertisementIntervalHandles.push(handle)
     }
 }

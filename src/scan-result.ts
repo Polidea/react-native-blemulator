@@ -1,5 +1,5 @@
-export type Base64 = String
-export type UUID = String
+export type Base64 = string
+export type UUID = string
 
 export class ScanResult {
     id: String
@@ -7,11 +7,12 @@ export class ScanResult {
     localName?: String
     isConnectable?: boolean
     manufacturerData?: Base64
-    serviceData?: { [uuid: UUID]: Base64 }
+    serviceData?: { [uuid: string]: Base64 }
     serviceUuids?: Array<UUID>
     solicitedServiceUuids?: Array<UUID>
     overflowServiceUuids?: Array<UUID>
     txPowerLevel?: number
+    rssi?: number
 
     constructor(args: {
         id: String,
@@ -19,11 +20,12 @@ export class ScanResult {
         name?: String,
         localName?: String,
         manufacturerData?: Base64,
-        serviceData?: { [uuid: UUID]: Base64 },
+        serviceData?: { [uuid: string]: Base64 },
         serviceUuids?: Array<UUID>,
         solicitedServiceUuids?: Array<UUID>,
         overflowServiceUuids?: Array<UUID>,
-        txPowerLevel?: number
+        txPowerLevel?: number,
+        rssi?: number
     }) {
         this.id = args.id
         this.isConnectable = args.isConnectable
@@ -35,5 +37,6 @@ export class ScanResult {
         this.solicitedServiceUuids = args.solicitedServiceUuids
         this.overflowServiceUuids = args.overflowServiceUuids
         this.txPowerLevel = args.txPowerLevel
+        this.rssi = args.rssi
     }
 }
