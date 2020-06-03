@@ -8,7 +8,7 @@ interface BlemulatorModuleInterface {
     runTest(): void,
     handleReturnCall(callbackId: String, jsonString: Object): void,
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
-    simulate(): void
+    simulate(): Promise<void>
 }
 
 interface MethodCallArguments {
@@ -44,9 +44,9 @@ class BlemulatorInstance {
         blemulatorModule.runTest()
     }
 
-    simulate() {
+    async simulate(): Promise<void> {
         console.log(`Turn on simulation mode`)
-        blemulatorModule.simulate()
+        return blemulatorModule.simulate()
     }
 
     private test(callbackId: String) {
