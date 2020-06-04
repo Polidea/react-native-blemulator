@@ -44,7 +44,7 @@ class BlemulatorInstance {
         blemulatorModule.runTest()
     }
 
-    async simulate(): Promise<void> {
+    simulate(): Promise<void> {
         console.log(`Turn on simulation mode`)
         return blemulatorModule.simulate()
     }
