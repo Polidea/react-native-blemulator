@@ -11,6 +11,7 @@ interface BlemulatorModuleInterface {
     handleReturnCall(callbackId: String, jsonString: Object): void
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
     addScanResult(scanResult: ScanResult): void
+    simulate(): Promise<void>
 }
 
 interface MethodCallArguments {
@@ -55,6 +56,11 @@ class BlemulatorInstance {
 
     runNativeToJsCommunicationTest() {
         blemulatorModule.runTest()
+    }
+
+    simulate(): Promise<void> {
+        console.log(`Turn on simulation mode`) //TODO remove this before release
+        return blemulatorModule.simulate()
     }
 
     private test(callbackId: String) {

@@ -1,16 +1,21 @@
 package com.polidea.blemulator;
 
+import android.content.Context;
 import android.util.Base64;
 import android.util.Log;
 
+import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 import com.polidea.blemulator.parser.ReadableArrayToListParser;
 import com.polidea.blemulator.parser.ReadableMapToMapParser;
 import com.polidea.multiplatformbleadapter.AdvertisementData;
+import com.polidea.multiplatformbleadapter.BleAdapter;
+import com.polidea.multiplatformbleadapter.BleAdapterCreator;
+import com.polidea.multiplatformbleadapter.BleAdapterFactory;
 import com.polidea.multiplatformbleadapter.ScanResult;
 
 import java.util.List;
@@ -99,5 +104,19 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     public void sampleMethod(String stringArgument, int numberArgument, Callback callback) {
         // TODO: Implement some actually useful functionality
         callback.invoke("Received numberArgument: " + numberArgument + " stringArgument: " + stringArgument);
+    }
+
+    @ReactMethod
+    public void simulate(final Promise promise) {
+        Log.d(TAG, "Turn on BLE simulation");
+        final BlemulatorModule that = this;
+        BleAdapterFactory.setBleAdapterCreator(new BleAdapterCreator() {
+            @Override
+            public BleAdapter createAdapter(Context context) {
+                SimulatedAdapter adapter = new SimulatedAdapter(that, jsBridge);
+                return adapter;
+            }
+        });
+        promise.resolve(true);
     }
 }
