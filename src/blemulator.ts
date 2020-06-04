@@ -45,7 +45,7 @@ class BlemulatorInstance {
     }
 
     simulate(): Promise<void> {
-        console.log(`Turn on simulation mode`)
+        console.log(`Turn on simulation mode`) //TODO remove this before release
         return blemulatorModule.simulate()
     }
 
