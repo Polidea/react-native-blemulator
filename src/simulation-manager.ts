@@ -27,6 +27,7 @@ export class SimulationManager {
                         id: "test id",
                         localName: "SensorTag",
                         name: "SensorTag",
+                        rssi: -50
                     }
                 ))
             },

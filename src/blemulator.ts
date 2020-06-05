@@ -42,10 +42,13 @@ class BlemulatorInstance {
                         this.test(args.callbackId)
                         break
                     case MethodName.START_SCAN:
+                        //TODO handle params #12
                         this.manager.startScan((scanResult) => { blemulatorModule.addScanResult(scanResult) })
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
                         break
                     case MethodName.STOP_SCAN:
                         this.manager.stopScan()
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
                         break
                     default:
                         console.log("Uknown method requested")

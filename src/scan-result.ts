@@ -12,7 +12,7 @@ export class ScanResult {
     solicitedServiceUuids?: Array<UUID>
     overflowServiceUuids?: Array<UUID>
     txPowerLevel?: number
-    rssi?: number
+    rssi: number
 
     constructor(args: {
         id: String,
@@ -25,7 +25,7 @@ export class ScanResult {
         solicitedServiceUuids?: Array<UUID>,
         overflowServiceUuids?: Array<UUID>,
         txPowerLevel?: number,
-        rssi?: number
+        rssi: number
     }) {
         this.id = args.id
         this.isConnectable = args.isConnectable

@@ -1,7 +1,6 @@
 package com.polidea.blemulator;
 
 import android.content.Context;
-import android.util.Base64;
 import android.util.Log;
 
 import com.facebook.react.bridge.Callback;
@@ -10,16 +9,11 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
-import com.polidea.blemulator.parser.ReadableArrayToListParser;
-import com.polidea.blemulator.parser.ReadableMapToMapParser;
-import com.polidea.multiplatformbleadapter.AdvertisementData;
+import com.polidea.blemulator.parser.ScanResultParser;
 import com.polidea.multiplatformbleadapter.BleAdapter;
 import com.polidea.multiplatformbleadapter.BleAdapterCreator;
 import com.polidea.multiplatformbleadapter.BleAdapterFactory;
 import com.polidea.multiplatformbleadapter.ScanResult;
-
-import java.util.List;
-import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,7 +35,7 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     @Override
     public void onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy();
-        //TODO should we update context for sending events?
+        //TODO remove old adapter?
     }
 
     @Override
@@ -74,29 +68,7 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void addScanResult(ReadableMap scanResult) {
         //TODO handle errors (#12)
-
-        List<UUID> overflowServiceUuidsList = ReadableArrayToListParser.parse(scanResult.getArray("overflowServiceUuids"));
-        UUID[] overflowServiceUuids = null;
-        if (overflowServiceUuidsList != null) {
-            overflowServiceUuids = overflowServiceUuidsList.toArray(new UUID[overflowServiceUuidsList.size()]);
-        }
-
-        ScanResult result = new ScanResult(
-                scanResult.getString("id"),
-                scanResult.getString("name"),
-                scanResult.getInt("rssi"),
-                -1,
-                scanResult.getBoolean("isConnectable"),
-                overflowServiceUuids,
-                new AdvertisementData(
-                        Base64.decode(scanResult.getString("manufacturerData"), 0),
-                        ReadableMapToMapParser.parse(scanResult.getMap("servicaData")),
-                        ReadableArrayToListParser.parse(scanResult.getArray("serviceUuids")),
-                        scanResult.getString("localName"),
-                        scanResult.getInt("txPowerLevel"),
-                        ReadableArrayToListParser.parse(scanResult.getArray("solicitedServiceUuids"))
-                )
-        );
+        ScanResult result = ScanResultParser.parse(scanResult);
         adapter.addScanResult(result);
     }
 
