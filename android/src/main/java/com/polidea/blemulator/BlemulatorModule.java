@@ -81,11 +81,10 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void simulate(final Promise promise) {
         Log.d(TAG, "Turn on BLE simulation");
-        final BlemulatorModule that = this;
         BleAdapterFactory.setBleAdapterCreator(new BleAdapterCreator() {
             @Override
             public BleAdapter createAdapter(Context context) {
-                SimulatedAdapter adapter = new SimulatedAdapter(that, jsBridge);
+                SimulatedAdapter adapter = new SimulatedAdapter(BlemulatorModule.this, jsBridge);
                 return adapter;
             }
         });

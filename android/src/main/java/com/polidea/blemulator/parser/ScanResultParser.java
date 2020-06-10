@@ -12,12 +12,16 @@ import java.util.List;
 import java.util.UUID;
 
 public class ScanResultParser {
+
+    static final int MTU_NOT_AVAILABLE_BEFORE_CONNECTION = -1;
+    static final boolean IS_CONNECTABLE_IS_IOS_ONLY = false;
+
     public static ScanResult parse(ReadableMap scanResult) {
         String id = scanResult.getString("id");
         String name = scanResult.hasKey(NativeArgumentName.NAME) ? scanResult.getString(NativeArgumentName.NAME) : null;
         int rssi = scanResult.getInt("rssi");
-        int mtu = -1; //should not be available on scan
-        boolean isConnectable = false; //always false on Android
+        int mtu = MTU_NOT_AVAILABLE_BEFORE_CONNECTION;
+        boolean isConnectable = IS_CONNECTABLE_IS_IOS_ONLY;
         ReadableArray jsOverflowServiceUuids = scanResult.hasKey(NativeArgumentName.OVERFLOW_SERVICE_UUIDS) ?
                 scanResult.getArray(NativeArgumentName.OVERFLOW_SERVICE_UUIDS) : null;
         byte[] manufacturerData = scanResult.hasKey(NativeArgumentName.MANUFACTURER_DATA) ?
