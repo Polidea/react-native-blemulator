@@ -42,12 +42,11 @@ export class SimulatedCharacteristic {
         this.id = IdGenerator.nextId()
         this.value = initialValue
 
-        let that = this
 
         descriptors.forEach((descriptor) => {
-            that.descriptorsById.set(descriptor.id, descriptor)
-            that.descriptorsByUuid.set(descriptor.uuid, descriptor)
-            descriptor.attachToCharacteristic(that)
+            this.descriptorsById.set(descriptor.id, descriptor)
+            this.descriptorsByUuid.set(descriptor.uuid, descriptor)
+            descriptor.attachToCharacteristic(this)
         })
     }
 
