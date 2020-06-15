@@ -20,15 +20,32 @@ import java.util.List;
 public class SimulatedAdapter implements BleAdapter {
 
     private static final String TAG =  SimulatedAdapter.class.getName();
+    private final BlemulatorModule module;
+    private final PlatformToJsBridge bridge;
+
+    private OnEventCallback<ScanResult> scanResultCallback = null;
+
+    public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
+        this.module = module;
+        this.bridge = bridge;
+    }
+
+    public void addScanResult(ScanResult scanResult) {
+        if (scanResultCallback != null) {
+            scanResultCallback.onEvent(scanResult);
+        }
+    }
 
     @Override
     public void createClient(String restoreStateIdentifier, OnEventCallback<String> onAdapterStateChangeCallback, OnEventCallback<Integer> onStateRestored) {
         Log.i(TAG, "createClient called");
+        module.registerAdapter(this);
     }
 
     @Override
     public void destroyClient() {
         Log.i(TAG, "destroyClient called");
+        module.deregisterAdapter();
     }
 
     @Override
@@ -50,11 +67,19 @@ public class SimulatedAdapter implements BleAdapter {
     @Override
     public void startDeviceScan(String[] filteredUUIDs, int scanMode, int callbackType, OnEventCallback<ScanResult> onEventCallback, OnErrorCallback onErrorCallback) {
         Log.i(TAG, "startDeviceScan called");
+        if (scanResultCallback == null) {
+            bridge.startScan(filteredUUIDs, scanMode, callbackType, onErrorCallback);
+            scanResultCallback = onEventCallback;
+        } else {
+            throw new IllegalStateException("Scan already in progress");
+        }
     }
 
     @Override
     public void stopDeviceScan() {
         Log.i(TAG, "stopDeviceScan called");
+        bridge.stopScan();
+        scanResultCallback = null;
     }
 
     @Override

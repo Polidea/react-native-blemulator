@@ -1,29 +1,37 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
+import { ScanResult } from './scan-result'
+import { SimulationManager } from './simulation-manager';
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 const _METHOD_CALL_EVENT = "MethodCall"
 
 interface BlemulatorModuleInterface {
-    runTest(): void,
-    handleReturnCall(callbackId: String, jsonString: Object): void,
+    runTest(): void
+    handleReturnCall(callbackId: String, jsonString: Object): void
     sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
+    addScanResult(scanResult: ScanResult): void
     simulate(): Promise<void>
 }
 
 interface MethodCallArguments {
-    methodName: String,
+    methodName: String
     callbackId: String
 }
 
 enum MethodName {
     TEST = "test",
+    START_SCAN = "startScan",
+    STOP_SCAN = "stopScan",
 }
 
 class BlemulatorInstance {
     private emitterSubscription: EmitterSubscription;
+    private manager: SimulationManager
 
     constructor() {
+        this.manager = new SimulationManager()
+
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
             _METHOD_CALL_EVENT,
@@ -32,6 +40,15 @@ class BlemulatorInstance {
                 switch (args.methodName) {
                     case MethodName.TEST:
                         this.test(args.callbackId)
+                        break
+                    case MethodName.START_SCAN:
+                        //TODO handle params #12
+                        this.manager.startScan((scanResult) => { blemulatorModule.addScanResult(scanResult) })
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
+                    case MethodName.STOP_SCAN:
+                        this.manager.stopScan()
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
                         break
                     default:
                         console.log("Uknown method requested")
