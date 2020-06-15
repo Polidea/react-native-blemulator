@@ -1,6 +1,6 @@
 import { UUID, Base64, ValueListener, Subscription } from "./types";
 import { SimulatedDescriptor } from "./simulated-descriptor";
-import { IdGenerator } from "./utils";
+import { IdGenerator } from "./internal/utils";
 import { SimulatedService } from "./simulated-service";
 
 interface ExtendedValueListener {

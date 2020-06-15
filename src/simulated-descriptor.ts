@@ -1,5 +1,5 @@
 import { ValueListener, Base64, Subscription, UUID } from "./types"
-import { IdGenerator } from "./utils"
+import { IdGenerator } from "./internal/utils"
 import { SimulatedCharacteristic } from "./simulated-characteristic"
 
 export class SimulatedDescriptor {

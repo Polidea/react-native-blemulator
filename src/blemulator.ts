@@ -1,6 +1,6 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
 import { ScanResult } from './scan-result'
-import { SimulationManager } from './simulation-manager';
+import { SimulationManager } from './internal/simulation-manager';
 import { SimulatedPeripheral } from './simulated-peripheral';
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;

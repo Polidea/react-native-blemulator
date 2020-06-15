@@ -1,6 +1,6 @@
 import { UUID } from "./types";
 import { SimulatedCharacteristic } from "./simulated-characteristic";
-import { IdGenerator } from "./utils";
+import { IdGenerator } from "./internal/utils";
 
 export class SimulatedService {
     readonly uuid: UUID
