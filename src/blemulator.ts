@@ -1,6 +1,7 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
 import { ScanResult } from './scan-result'
 import { SimulationManager } from './simulation-manager';
+import { SimulatedPeripheral } from './simulated-peripheral';
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
@@ -64,6 +65,10 @@ class BlemulatorInstance {
     simulate(): Promise<void> {
         console.log(`Turn on simulation mode`) //TODO remove this before release
         return blemulatorModule.simulate()
+    }
+
+    addPeripheral(peripheral: SimulatedPeripheral): void {
+        this.manager.addPeripheral(peripheral)
     }
 
     private test(callbackId: String) {
