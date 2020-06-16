@@ -55,12 +55,6 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void runTest() {
-        Log.d(TAG, "Initiating test");
-        jsBridge.test();
-    }
-
-    @ReactMethod
     public void handleReturnCall(String callId, @Nullable ReadableMap args) {
         callHandler.handleReturnCall(callId, args);
     }
@@ -70,12 +64,6 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
         //TODO handle errors (#12)
         ScanResult result = ScanResultParser.parse(scanResult);
         adapter.addScanResult(result);
-    }
-
-    @ReactMethod
-    public void sampleMethod(String stringArgument, int numberArgument, Callback callback) {
-        // TODO: Implement some actually useful functionality
-        callback.invoke("Received numberArgument: " + numberArgument + " stringArgument: " + stringArgument);
     }
 
     @ReactMethod

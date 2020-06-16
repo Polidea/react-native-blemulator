@@ -34,7 +34,7 @@ export class SimulatedPeripheral {
     private isDiscoveryDone: boolean = false
 
     constructor({
-        name, id, advertisementInterval, services, rssi, txPowerLevel, isConnectable = true,
+        name, id, advertisementInterval, services, rssi = -30, txPowerLevel, isConnectable = true,
         manufacturerData, serviceData, serviceUuids = [], localName, solicitedServiceUuids, overflowUuids
     }: { name?: string, id: string, advertisementInterval: number, services: Array<SimulatedService> } & ScanInfo) {
         this.scanInfo = {
