@@ -20,18 +20,7 @@ export class SimulationManager {
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.peripherals.push(peripheral)
         if (this.isScanInProgress) {
-            let shouldAdvertise = true
-            if (this.filteredUuids && this.filteredUuids.length > 0) {
-                shouldAdvertise = this.filteredUuids.some(
-                    (value) => {
-                        peripheral.scanInfo.serviceUuids.some(
-                            (advertisedServiceUuid) => {
-                                value === advertisedServiceUuid
-                            })
-                    }
-                )
-            }
-            if (shouldAdvertise)
+            if (this.shouldAdvertise(peripheral, this.filteredUuids))
                 this.setAdvertisement(peripheral)
             this.setAdvertisement(peripheral)
         }
@@ -55,18 +44,7 @@ export class SimulationManager {
         this.addScanResult = addScanResult
         this.filteredUuids = filteredUuids
         this.peripherals.forEach((peripheral) => {
-            let shouldAdvertise = true
-            if (filteredUuids && filteredUuids.length > 0) {
-                shouldAdvertise = filteredUuids.some(
-                    (value) => {
-                        peripheral.scanInfo.serviceUuids.some(
-                            (advertisedServiceUuid) => {
-                                value === advertisedServiceUuid
-                            })
-                    }
-                )
-            }
-            if (shouldAdvertise)
+            if (this.shouldAdvertise(peripheral, this.filteredUuids))
                 this.setAdvertisement(peripheral)
         })
         this.isScanInProgress = true
@@ -80,6 +58,21 @@ export class SimulationManager {
         }
         this.addScanResult = () => { }
         this.isScanInProgress = false
+    }
+
+    private shouldAdvertise(peripheral: SimulatedPeripheral, filteredUuids?: Array<UUID>): boolean {
+        let shouldAdvertise = true
+        if (filteredUuids && filteredUuids.length > 0) {
+            shouldAdvertise = filteredUuids.some(
+                (value) => {
+                    peripheral.scanInfo.serviceUuids.some(
+                        (advertisedServiceUuid) => {
+                            value === advertisedServiceUuid
+                        })
+                }
+            )
+        }
+        return shouldAdvertise
     }
 
     private setAdvertisement(peripheral: SimulatedPeripheral): void {
