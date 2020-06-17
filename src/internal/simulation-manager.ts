@@ -23,7 +23,6 @@ export class SimulationManager {
         if (this.isScanInProgress) {
             if (this.shouldAdvertise(peripheral, this.filteredUuids))
                 this.setAdvertisement(peripheral)
-            this.setAdvertisement(peripheral)
         }
     }
 
@@ -49,8 +48,6 @@ export class SimulationManager {
                 this.setAdvertisement(peripheral)
         })
         this.isScanInProgress = true
-
-        return undefined
     }
 
     stopScan(): void {
