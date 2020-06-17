@@ -63,11 +63,6 @@ class BlemulatorInstance {
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.manager.addPeripheral(peripheral)
     }
-
-    private test(callbackId: String) {
-        console.log(`Handling call ${callbackId} in JS`)
-        blemulatorModule.handleReturnCall(callbackId, { value: { testProperty: "test value" } })
-    }
 }
 
 export interface Blemulator extends BlemulatorInstance { }

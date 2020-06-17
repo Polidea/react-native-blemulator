@@ -6,11 +6,12 @@ import { SimulatedBleError, BleErrorCode } from '../ble-error'
 export type ScanResultListener = (scanResult: ScanResult) => void
 
 enum AdapterState {
-    BLUETOOTH_ON
+    POWERED_ON,
+    POWERED_OFF
 }
 
 export class SimulationManager {
-    private adapterState: AdapterState = AdapterState.BLUETOOTH_ON
+    private adapterState: AdapterState = AdapterState.POWERED_ON
     private peripherals: Array<SimulatedPeripheral> = []
     private addScanResult: ScanResultListener = () => { }
     private filteredUuids?: Array<UUID> = undefined
@@ -28,7 +29,7 @@ export class SimulationManager {
 
     startScan(filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
         callbackType: number | undefined, addScanResult: ScanResultListener): SimulatedBleError | undefined {
-        if (this.adapterState != AdapterState.BLUETOOTH_ON) {
+        if (this.adapterState != AdapterState.POWERED_ON) {
             return {
                 errorCode: BleErrorCode.BluetoothPoweredOff,
                 message: "Bluetooth not powered on"

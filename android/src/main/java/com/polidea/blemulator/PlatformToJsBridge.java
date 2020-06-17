@@ -11,8 +11,6 @@ import com.polidea.multiplatformbleadapter.OnErrorCallback;
 import com.polidea.multiplatformbleadapter.errors.BleError;
 import com.polidea.multiplatformbleadapter.errors.BleErrorCode;
 
-import java.util.Collections;
-
 import androidx.annotation.Nullable;
 
 public class PlatformToJsBridge {
