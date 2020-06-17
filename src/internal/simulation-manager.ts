@@ -43,7 +43,7 @@ export class SimulationManager {
         }
 
         this.addScanResult = addScanResult
-        this.filteredUuids = filteredUuids
+        this.filteredUuids = filteredUuids?.map((uuid) => uuid.toUpperCase())
         this.peripherals.forEach((peripheral) => {
             if (this.shouldAdvertise(peripheral, this.filteredUuids))
                 this.setAdvertisement(peripheral)

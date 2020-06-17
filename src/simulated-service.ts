@@ -13,7 +13,7 @@ export class SimulatedService {
     constructor({ uuid, isAdvertised, convenienceName, characteristics }:
         { uuid: UUID, isAdvertised: boolean, convenienceName?: string, characteristics: Array<SimulatedCharacteristic> }
     ) {
-        this.uuid = uuid
+        this.uuid = uuid.toUpperCase()
         this.id = IdGenerator.nextId()
         this.isAdvertised = isAdvertised
         this.convenienceName = convenienceName

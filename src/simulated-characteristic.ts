@@ -32,7 +32,7 @@ export class SimulatedCharacteristic {
             isWritableWithoutResponse: boolean, isNotifiable: boolean, isIndicatable: boolean, initialValue: Base64,
             descriptors: Array<SimulatedDescriptor>, convenienceName?: string
         }) {
-        this.uuid = uuid
+        this.uuid = uuid.toUpperCase()
         this.isReadable = isReadable
         this.isWritableWithResponse = isWritableWithResponse
         this.isWritableWithoutResponse = isWritableWithoutResponse
