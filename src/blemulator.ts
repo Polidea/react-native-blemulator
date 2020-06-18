@@ -1,16 +1,16 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription, EventSubscriptionVendor } from 'react-native';
 import { ScanResult } from './scan-result'
-import { SimulationManager } from './simulation-manager';
+import { SimulationManager } from './internal/simulation-manager';
 import { SimulatedPeripheral } from './simulated-peripheral';
+import { UUID } from './types';
+import { SimulatedBleError } from './ble-error';
 
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 const _METHOD_CALL_EVENT = "MethodCall"
 
 interface BlemulatorModuleInterface {
-    runTest(): void
-    handleReturnCall(callbackId: String, jsonString: Object): void
-    sampleMethod(stringArgument: String, numberArgument: Number, callback: (arg: String) => void): void
+    handleReturnCall(callbackId: String, returnValue: { value?: Object, error?: SimulatedBleError }): void
     addScanResult(scanResult: ScanResult): void
     simulate(): Promise<void>
 }
@@ -21,7 +21,6 @@ interface MethodCallArguments {
 }
 
 enum MethodName {
-    TEST = "test",
     START_SCAN = "startScan",
     STOP_SCAN = "stopScan",
 }
@@ -39,13 +38,11 @@ class BlemulatorInstance {
             (args: MethodCallArguments) => {
                 console.log(`Requested method: ${args.methodName}`)
                 switch (args.methodName) {
-                    case MethodName.TEST:
-                        this.test(args.callbackId)
-                        break
                     case MethodName.START_SCAN:
-                        //TODO handle params #12
-                        this.manager.startScan((scanResult) => { blemulatorModule.addScanResult(scanResult) })
-                        blemulatorModule.handleReturnCall(args.callbackId, {})
+                        const scanArgs = args as MethodCallArguments & { filteredUuids?: Array<UUID>, scanMode?: number, callbackType?: number }
+                        const error: SimulatedBleError | undefined = this.manager.startScan(scanArgs.filteredUuids, scanArgs.scanMode, scanArgs.callbackType,
+                            (scanResult) => { blemulatorModule.addScanResult(scanResult) })
+                        blemulatorModule.handleReturnCall(args.callbackId, { error: error })
                         break
                     case MethodName.STOP_SCAN:
                         this.manager.stopScan()
@@ -58,10 +55,6 @@ class BlemulatorInstance {
         )
     }
 
-    runNativeToJsCommunicationTest() {
-        blemulatorModule.runTest()
-    }
-
     simulate(): Promise<void> {
         console.log(`Turn on simulation mode`) //TODO remove this before release
         return blemulatorModule.simulate()
@@ -70,13 +63,8 @@ class BlemulatorInstance {
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.manager.addPeripheral(peripheral)
     }
-
-    private test(callbackId: String) {
-        console.log(`Handling call ${callbackId} in JS`)
-        blemulatorModule.handleReturnCall(callbackId, { testProperty: "test value" })
-    }
 }
 
-export interface Blemulator extends BlemulatorInstance {}
+export interface Blemulator extends BlemulatorInstance { }
 
 export const blemulator: Blemulator = new BlemulatorInstance()

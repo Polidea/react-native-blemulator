@@ -1,14 +1,10 @@
 package com.polidea.blemulator;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
@@ -25,29 +21,6 @@ public class PlatformToJsBridge {
     public PlatformToJsBridge(ReactContext reactContext, JsCallHandler callHandler) {
         this.reactContext = reactContext;
         this.callHandler = callHandler;
-    }
-
-    public void test() {
-        final String LOCAL_TAG = "BRIDGE TEST";
-        Log.d(LOCAL_TAG, "Starting test");
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        for (int i = 0; i < 5; i++) {
-            final int index = i;
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(LOCAL_TAG, "Calling JS method, call index: " + index);
-                    JsCallHandler.Callback callback = new JsCallHandler.Callback() {
-                        @Override
-                        public void invoke(ReadableMap args) {
-                            Log.d(LOCAL_TAG, "Returning call: " + index + " | Received data: " + args.getString("testProperty"));
-                        }
-                    };
-                    callMethod(MethodName.TEST, null, callback);
-                }
-            }, i * 1000);
-        }
     }
 
     public void startScan(String[] filteredUUIDs,
@@ -72,8 +45,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            //TODO proper error handling (#12)
-                            onErrorCallback.onError(new BleError(BleErrorCode.UnknownError, "", -1));
+                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
                         }
                     }
                 }
@@ -97,6 +69,18 @@ public class PlatformToJsBridge {
         params.putString("callbackId", callbackId);
         params.putMap("arguments", arguments);
         callJsMethod(params);
+    }
+
+    private BleError parseError(ReadableMap mappedError) {
+        BleErrorCode matchedErrorCode = BleErrorCode.UnknownError;
+        int incomingErrorCode = mappedError.getInt(NativeArgumentName.ERROR_CODE);
+        for(BleErrorCode value : BleErrorCode.values()) {
+            if (value.code == incomingErrorCode) {
+                matchedErrorCode = value;
+                break;
+            }
+        }
+        return new BleError(matchedErrorCode, mappedError.getString(NativeArgumentName.ERROR_MESSAGE), -1);
     }
 
     private void callJsMethod(ReadableMap params) {

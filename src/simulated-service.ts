@@ -1,6 +1,6 @@
 import { UUID } from "./types";
 import { SimulatedCharacteristic } from "./simulated-characteristic";
-import { IdGenerator } from "./utils";
+import { IdGenerator } from "./internal/utils";
 
 export class SimulatedService {
     readonly uuid: UUID
@@ -13,7 +13,7 @@ export class SimulatedService {
     constructor({ uuid, isAdvertised, convenienceName, characteristics }:
         { uuid: UUID, isAdvertised: boolean, convenienceName?: string, characteristics: Array<SimulatedCharacteristic> }
     ) {
-        this.uuid = uuid
+        this.uuid = uuid.toUpperCase()
         this.id = IdGenerator.nextId()
         this.isAdvertised = isAdvertised
         this.convenienceName = convenienceName

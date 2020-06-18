@@ -3,6 +3,8 @@ package com.polidea.blemulator;
 public interface NativeArgumentName {
     //UNIVERSAL
     String ERROR = "error";
+    String ERROR_CODE = "errorCode";
+    String ERROR_MESSAGE = "message";
     String ID = "id";
 
     //ScanResult

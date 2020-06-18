@@ -1,5 +1,5 @@
 import { ValueListener, Base64, Subscription, UUID } from "./types"
-import { IdGenerator } from "./utils"
+import { IdGenerator } from "./internal/utils"
 import { SimulatedCharacteristic } from "./simulated-characteristic"
 
 export class SimulatedDescriptor {
@@ -15,7 +15,7 @@ export class SimulatedDescriptor {
     constructor({ uuid, initialValue, isReadable = true, isWritable = true, convenienceName }:
         { uuid: string, initialValue: Base64, isReadable: boolean, isWritable: boolean, convenienceName?: string }) {
         this.id = IdGenerator.nextId()
-        this.uuid = uuid
+        this.uuid = uuid.toUpperCase()
         this.value = initialValue
         this.isReadable = isReadable
         this.isWritable = isWritable

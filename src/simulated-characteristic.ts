@@ -1,6 +1,6 @@
 import { UUID, Base64, ValueListener, Subscription } from "./types";
 import { SimulatedDescriptor } from "./simulated-descriptor";
-import { IdGenerator } from "./utils";
+import { IdGenerator } from "./internal/utils";
 import { SimulatedService } from "./simulated-service";
 
 interface ExtendedValueListener {
@@ -32,7 +32,7 @@ export class SimulatedCharacteristic {
             isWritableWithoutResponse: boolean, isNotifiable: boolean, isIndicatable: boolean, initialValue: Base64,
             descriptors: Array<SimulatedDescriptor>, convenienceName?: string
         }) {
-        this.uuid = uuid
+        this.uuid = uuid.toUpperCase()
         this.isReadable = isReadable
         this.isWritableWithResponse = isWritableWithResponse
         this.isWritableWithoutResponse = isWritableWithoutResponse

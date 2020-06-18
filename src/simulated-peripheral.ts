@@ -34,7 +34,7 @@ export class SimulatedPeripheral {
     private isDiscoveryDone: boolean = false
 
     constructor({
-        name, id, advertisementInterval, services, rssi, txPowerLevel, isConnectable = true,
+        name, id, advertisementInterval, services, rssi = -30, txPowerLevel, isConnectable = true,
         manufacturerData, serviceData, serviceUuids = [], localName, solicitedServiceUuids, overflowUuids
     }: { name?: string, id: string, advertisementInterval: number, services: Array<SimulatedService> } & ScanInfo) {
         this.scanInfo = {
@@ -85,21 +85,21 @@ export class SimulatedPeripheral {
     }
 
     getCharacteristicForService(serviceUuid: UUID, characteristicUuid: UUID): SimulatedCharacteristic | undefined {
-        let service = this.servicesByUuid.get(serviceUuid)
+        let service = this.servicesByUuid.get(serviceUuid.toUpperCase())
         if (!service) {
             return undefined
         }
 
-        return service.getCharacteristicByUuid(characteristicUuid)
+        return service.getCharacteristicByUuid(characteristicUuid.toUpperCase())
     }
 
     getDescriptorForCharacteristicAndService(serviceUuid: UUID, characteristicUuid: UUID, descriptorUuid: UUID): SimulatedDescriptor | undefined {
-        let characteristic = this.getCharacteristicForService(serviceUuid, characteristicUuid)
+        let characteristic = this.getCharacteristicForService(serviceUuid.toUpperCase(), characteristicUuid.toUpperCase())
         if (!characteristic) {
             return undefined
         }
 
-        return characteristic.getDescriptorByUuid(descriptorUuid)
+        return characteristic.getDescriptorByUuid(descriptorUuid.toUpperCase())
     }
 
     getDescriptorForCharacteristic(characteristicId: number, descriptorUuid: UUID): SimulatedDescriptor | undefined {
@@ -108,7 +108,7 @@ export class SimulatedPeripheral {
             return undefined
         }
 
-        return characteristic.getDescriptorByUuid(descriptorUuid)
+        return characteristic.getDescriptorByUuid(descriptorUuid.toUpperCase())
     }
 
     getDescriptorForService(serviceId: number, characteristicUuid: UUID, descriptorUuid: UUID): SimulatedDescriptor | undefined {
@@ -117,11 +117,11 @@ export class SimulatedPeripheral {
             return undefined
         }
 
-        let characteristic = service.getCharacteristicByUuid(characteristicUuid)
+        let characteristic = service.getCharacteristicByUuid(characteristicUuid.toUpperCase())
         if (!characteristic) {
             return undefined
         }
 
-        return characteristic.getDescriptorByUuid(descriptorUuid)
+        return characteristic.getDescriptorByUuid(descriptorUuid.toUpperCase())
     }
 }
