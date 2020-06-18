@@ -15,7 +15,9 @@ import com.polidea.multiplatformbleadapter.ScanResult;
 import com.polidea.multiplatformbleadapter.Service;
 import com.polidea.multiplatformbleadapter.errors.BleError;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SimulatedAdapter implements BleAdapter {
 
@@ -24,6 +26,8 @@ public class SimulatedAdapter implements BleAdapter {
     private final PlatformToJsBridge bridge;
 
     private OnEventCallback<ScanResult> scanResultCallback = null;
+    private Map<String, Device> peripherals = new HashMap<>();
+    private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
         this.module = module;
@@ -33,6 +37,9 @@ public class SimulatedAdapter implements BleAdapter {
     public void addScanResult(ScanResult scanResult) {
         if (scanResultCallback != null) {
             scanResultCallback.onEvent(scanResult);
+        }
+        if (!peripherals.containsKey(scanResult.getDeviceId())) {
+            peripherals.put(scanResult.getDeviceId(), new Device(scanResult.getDeviceId(), scanResult.getDeviceName()));
         }
     }
 
@@ -108,13 +115,34 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void connectToDevice(String deviceIdentifier, ConnectionOptions connectionOptions, OnSuccessCallback<Device> onSuccessCallback, OnEventCallback<ConnectionState> onConnectionStateChangedCallback, OnErrorCallback onErrorCallback) {
+    public void connectToDevice(final String deviceIdentifier,
+                                ConnectionOptions connectionOptions,
+                                final OnSuccessCallback<Device> onSuccessCallback,
+                                OnEventCallback<ConnectionState> onConnectionStateChangedCallback,
+                                OnErrorCallback onErrorCallback) {
         Log.i(TAG, "connectToDevice called");
+        connectionStateCallbacks.put(deviceIdentifier, onConnectionStateChangedCallback); //TODO #16 remove listener when device is disconnected
+        OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
+            @Override
+            public void onSuccess(Device data) {
+                onSuccessCallback.onSuccess(peripherals.get(deviceIdentifier));
+            }
+        };
+        bridge.connect(deviceIdentifier, connectionOptions, modifiedOnSuccessCallback, onErrorCallback);
     }
 
     @Override
-    public void cancelDeviceConnection(String deviceIdentifier, OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void cancelDeviceConnection(final String deviceIdentifier,
+                                       final OnSuccessCallback<Device> onSuccessCallback,
+                                       OnErrorCallback onErrorCallback) {
         Log.i(TAG, "cancelDeviceConnection called");
+        OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
+            @Override
+            public void onSuccess(Device data) {
+                onSuccessCallback.onSuccess(peripherals.get(deviceIdentifier));
+            }
+        };
+        bridge.cancelDeviceConnection(deviceIdentifier, modifiedOnSuccessCallback, onErrorCallback);
     }
 
     @Override

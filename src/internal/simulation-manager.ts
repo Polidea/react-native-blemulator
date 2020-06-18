@@ -1,85 +1,39 @@
 import { ScanResult } from '../scan-result'
 import { SimulatedPeripheral } from '../simulated-peripheral'
-import { UUID } from '../types'
-import { SimulatedBleError, BleErrorCode } from '../ble-error'
+import { UUID, AdapterState } from '../types'
+import { SimulatedBleError } from '../ble-error'
+import { ConnectionDelegate } from './delegates/connection-delegate'
+import { ScanDelegate } from './delegates/scan-delegate'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
-
-enum AdapterState {
-    POWERED_ON,
-    POWERED_OFF
-}
 
 export class SimulationManager {
     private adapterState: AdapterState = AdapterState.POWERED_ON
     private peripherals: Array<SimulatedPeripheral> = []
-    private addScanResult: ScanResultListener = () => { }
-    private filteredUuids?: Array<UUID> = undefined
-    private advertisementIntervalHandles: Array<number> = []
-    private isScanInProgress: boolean = false
+    private peripheralsById: Map<string, SimulatedPeripheral> = new Map<string, SimulatedPeripheral>()
+    private scanDelegate: ScanDelegate = new ScanDelegate()
+    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
 
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.peripherals.push(peripheral)
-        if (this.isScanInProgress) {
-            if (this.shouldAdvertise(peripheral, this.filteredUuids))
-                this.setAdvertisement(peripheral)
-        }
+        this.peripheralsById.set(peripheral.id, peripheral)
+        this.scanDelegate.addPeripheral(peripheral)
     }
 
     startScan(filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
         callbackType: number | undefined, addScanResult: ScanResultListener): SimulatedBleError | undefined {
-        if (this.adapterState != AdapterState.POWERED_ON) {
-            return {
-                errorCode: BleErrorCode.BluetoothPoweredOff,
-                message: "Bluetooth not powered on"
-            }
-        }
-        if (this.isScanInProgress) {
-            return {
-                errorCode: BleErrorCode.ScanStartFailed,
-                message: "Scan already in progress" //TODO should this error be returned?
-            }
-        }
-
-        this.addScanResult = addScanResult
-        this.filteredUuids = filteredUuids?.map((uuid) => uuid.toUpperCase())
-        this.peripherals.forEach((peripheral) => {
-            if (this.shouldAdvertise(peripheral, this.filteredUuids))
-                this.setAdvertisement(peripheral)
-        })
-        this.isScanInProgress = true
+        return this.scanDelegate.startScan(this.peripherals, filteredUuids, scanMode, callbackType, addScanResult)
     }
 
     stopScan(): void {
-        while (this.advertisementIntervalHandles.length > 0) {
-            clearInterval(this.advertisementIntervalHandles.pop())
-        }
-        this.addScanResult = () => { }
-        this.isScanInProgress = false
+        return this.scanDelegate.stopScan()
     }
 
-    private shouldAdvertise(peripheral: SimulatedPeripheral, filteredUuids?: Array<UUID>): boolean {
-        let shouldAdvertise = true
-        if (filteredUuids && filteredUuids.length > 0) {
-            shouldAdvertise = filteredUuids.some(
-                (value) => {
-                    peripheral.scanInfo.serviceUuids.some(
-                        (advertisedServiceUuid) => {
-                            value === advertisedServiceUuid
-                        })
-                }
-            )
-        }
-        return shouldAdvertise
+    async connect(peripheralIdentifier: string): Promise<SimulatedBleError | undefined> {
+        return this.connectionDelegate.connect(this.adapterState, this.peripheralsById, peripheralIdentifier)
     }
 
-    private setAdvertisement(peripheral: SimulatedPeripheral): void {
-        const handle = setInterval(
-            () => {
-                this.addScanResult(peripheral.getScanResult())
-            },
-            peripheral.advertisementInterval
-        )
-        this.advertisementIntervalHandles.push(handle)
+    async disconnect(peripheralIdentifier: string): Promise<SimulatedBleError | undefined> {
+        return this.connectionDelegate.disconnect(this.adapterState, this.peripheralsById, peripheralIdentifier)
     }
 }

@@ -45,7 +45,12 @@ export enum BleErrorCode {
     LocationServicesDisabled = 601,
 }
 
-export interface SimulatedBleError {
+export class SimulatedBleError {
     readonly errorCode: BleErrorCode
     readonly message: string
+
+    constructor({ errorCode, message }: { errorCode: BleErrorCode, message: string }) {
+        this.errorCode = errorCode
+        this.message = message
+    }
 }

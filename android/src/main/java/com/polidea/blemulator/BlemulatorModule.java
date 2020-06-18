@@ -3,7 +3,6 @@ package com.polidea.blemulator;
 import android.content.Context;
 import android.util.Log;
 
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -22,20 +21,25 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
 
     private static final String TAG = BlemulatorModule.class.toString();
 
-    private final PlatformToJsBridge jsBridge;
-    private final JsCallHandler callHandler;
+    private PlatformToJsBridge jsBridge;
+    private JsCallHandler callHandler;
     private SimulatedAdapter adapter = null;
 
     public BlemulatorModule(ReactApplicationContext reactContext) {
         super(reactContext);
+        init();
+    }
+
+    private void init() {
         callHandler = new JsCallHandler();
-        jsBridge = new PlatformToJsBridge(reactContext, callHandler);
+        jsBridge = new PlatformToJsBridge(getReactApplicationContext(), callHandler);
     }
 
     @Override
     public void onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy();
-        //TODO remove old adapter?
+        deregisterAdapter();
+        init();
     }
 
     @Override

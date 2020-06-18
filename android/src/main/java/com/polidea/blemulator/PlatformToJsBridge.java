@@ -7,7 +7,11 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.polidea.multiplatformbleadapter.ConnectionOptions;
+import com.polidea.multiplatformbleadapter.Device;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
+import com.polidea.multiplatformbleadapter.OnSuccessCallback;
+import com.polidea.multiplatformbleadapter.RefreshGattMoment;
 import com.polidea.multiplatformbleadapter.errors.BleError;
 import com.polidea.multiplatformbleadapter.errors.BleErrorCode;
 
@@ -62,6 +66,50 @@ public class PlatformToJsBridge {
         });
     }
 
+    public void connect(String deviceIdentifier,
+                        ConnectionOptions connectionOptions,
+                        final OnSuccessCallback<Device> onSuccessCallback,
+                        final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putBoolean(JsArgumentName.IS_AUTO_CONNECT, connectionOptions.getAutoConnect());
+        arguments.putInt(JsArgumentName.REQUEST_MTU, connectionOptions.getRequestMTU());
+        arguments.putBoolean(JsArgumentName.REFRESH_GATT, connectionOptions.getRefreshGattMoment() == RefreshGattMoment.ON_CONNECTED);
+        if (connectionOptions.getTimeoutInMillis() != null) {
+            arguments.putInt(JsArgumentName.TIMEOUT, connectionOptions.getTimeoutInMillis().intValue());
+        }
+        callMethod(MethodName.CONNECT, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    onSuccessCallback.onSuccess(null);
+                }
+            }
+        });
+    }
+
+    public void cancelDeviceConnection(final String deviceIdentifier,
+                                       final OnSuccessCallback<Device> onSuccessCallback,
+                                       final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        callMethod(
+                MethodName.CANCEL_CONNECTION_OR_DISCONNECT,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(null);
+                        }
+                    }
+                });
+    }
+
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {
         WritableMap params = Arguments.createMap();
         String callbackId = callHandler.addCallback(callback);
@@ -74,7 +122,7 @@ public class PlatformToJsBridge {
     private BleError parseError(ReadableMap mappedError) {
         BleErrorCode matchedErrorCode = BleErrorCode.UnknownError;
         int incomingErrorCode = mappedError.getInt(NativeArgumentName.ERROR_CODE);
-        for(BleErrorCode value : BleErrorCode.values()) {
+        for (BleErrorCode value : BleErrorCode.values()) {
             if (value.code == incomingErrorCode) {
                 matchedErrorCode = value;
                 break;
