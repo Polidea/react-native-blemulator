@@ -37,9 +37,6 @@ export class Bridge {
                 console.log(`Requested method: ${args.methodName}`)
                 let error: SimulatedBleError | undefined
                 switch (args.methodName) {
-                    case MethodName.DESTROY_CLIENT:
-                        emitter.removeSubscription(this.emitterSubscription)
-                        break
                     case MethodName.START_SCAN:
                         const scanArgs = args as MethodCallArguments & { arguments: { filteredUuids?: Array<UUID>, scanMode?: number, callbackType?: number } }
                         error = this.manager.startScan(scanArgs.arguments.filteredUuids, scanArgs.arguments.scanMode, scanArgs.arguments.callbackType,
