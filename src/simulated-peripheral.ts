@@ -1,4 +1,4 @@
-import { Base64, UUID } from "./types";
+import { Base64, UUID, ConnectionState } from "./types";
 import { SimulatedService } from "./simulated-service";
 import { SimulatedCharacteristic } from "./simulated-characteristic";
 import { SimulatedDescriptor } from "./simulated-descriptor";
@@ -30,7 +30,8 @@ export class SimulatedPeripheral {
     private servicesByUuid: Map<UUID, SimulatedService> = new Map<UUID, SimulatedService>()
     private characteristicsById: Map<number, SimulatedCharacteristic> = new Map<number, SimulatedCharacteristic>()
     private descriptorsById: Map<number, SimulatedDescriptor> = new Map<number, SimulatedDescriptor>()
-    private isConnected: boolean = false
+    private _isConnected: boolean = false
+    private _disconnectionPending: boolean = false
     private isDiscoveryDone: boolean = false
 
     constructor({
@@ -70,6 +71,33 @@ export class SimulatedPeripheral {
             serviceUuids: this.scanInfo.serviceUuids, solicitedServiceUuids: this.scanInfo.solicitedServiceUuids,
             localName: this.scanInfo.localName, overflowServiceUuids: this.scanInfo.overflowUuids, 
         })
+    }
+
+    async onConnectRequest(): Promise<boolean> {
+        this.onConnectionStateChanged(ConnectionState.CONNECTING)
+        return true
+    }
+
+    async onConnect(): Promise<void> {
+        this._isConnected = true
+        this.onConnectionStateChanged(ConnectionState.CONNECTED)
+    }
+
+    async onDisconnect(): Promise<void> {
+        this._isConnected = false
+        this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
+    }
+
+    isConnected(): boolean {
+        return this._isConnected
+    }
+
+    isDisconnectionPending(): boolean {
+        return this._disconnectionPending
+    }
+
+    setIsDisconnectionPending(disconnectionPending: boolean): void {
+        this._disconnectionPending = disconnectionPending
     }
 
     getService(id: number): SimulatedService | undefined {
@@ -123,5 +151,10 @@ export class SimulatedPeripheral {
         }
 
         return characteristic.getDescriptorByUuid(descriptorUuid.toUpperCase())
+    }
+
+    private onConnectionStateChanged(newConnectionState: ConnectionState): void {
+        console.log(`P:id "${this.id}"; state: ${newConnectionState}`) //TODO should this somehow be exposed to user? Maybe switched on or off somehow?
+        //TODO #16
     }
 }
