@@ -1,4 +1,5 @@
 export type ValueListener = (newValue: Base64) => void
+export type ConnectionStateListener = (connectionState: ConnectionState) => void
 
 export enum AdapterState {
     POWERED_ON,

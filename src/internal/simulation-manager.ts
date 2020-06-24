@@ -1,6 +1,6 @@
 import { ScanResult } from '../scan-result'
 import { SimulatedPeripheral } from '../simulated-peripheral'
-import { UUID, AdapterState } from '../types'
+import { UUID, AdapterState, ConnectionState } from '../types'
 import { SimulatedBleError } from '../ble-error'
 import { ConnectionDelegate } from './delegates/connection-delegate'
 import { ScanDelegate } from './delegates/scan-delegate'
@@ -13,6 +13,10 @@ export class SimulationManager {
     private peripheralsById: Map<string, SimulatedPeripheral> = new Map<string, SimulatedPeripheral>()
     private scanDelegate: ScanDelegate = new ScanDelegate()
     private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
+
+    setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
+        this.connectionDelegate.setConnectionStatePublisher(publisher)
+    }
 
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.peripherals.push(peripheral)

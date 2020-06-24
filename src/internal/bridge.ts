@@ -2,10 +2,17 @@ import { EventSubscriptionVendor, NativeModules, EmitterSubscription, NativeEven
 import { SimulatedBleError } from "../ble-error";
 import { ScanResult } from "../scan-result";
 import { SimulationManager } from "./simulation-manager";
-import { UUID } from "../types";
-import { BlemulatorModuleInterface } from "../blemulator";
+import { UUID, ConnectionState } from "../types";
 
 const _METHOD_CALL_EVENT = "MethodCall"
+interface BlemulatorModuleInterface {
+    handleReturnCall(callbackId: String, returnValue: { value?: Object, error?: SimulatedBleError }): void
+    addScanResult(scanResult: ScanResult): void
+    publishConnectionState(peripheralId: string, connectionState: string): void
+    simulate(): Promise<void>
+}
+
+const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 interface MethodCallArguments {
     methodName: String
@@ -26,9 +33,11 @@ export class Bridge {
     private manager: SimulationManager
     private blemulatorModule: BlemulatorModuleInterface
 
-    constructor(blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor, manager: SimulationManager) {
+    constructor(manager: SimulationManager) {
         this.manager = manager
         this.blemulatorModule = blemulatorModule
+
+        this.setupStatePublisher()
 
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
@@ -48,9 +57,11 @@ export class Bridge {
                         blemulatorModule.handleReturnCall(args.callbackId, {})
                         break
                     case MethodName.CONNECT:
-                        const connectArgs = args as MethodCallArguments & { arguments: {
-                            identifier: string, isAutoConnect?: boolean, requestMtu?: number, refreshGatt?: boolean, timeout?: number
-                        }}
+                        const connectArgs = args as MethodCallArguments & {
+                            arguments: {
+                                identifier: string, isAutoConnect?: boolean, requestMtu?: number, refreshGatt?: boolean, timeout?: number
+                            }
+                        }
                         error = await this.manager.connect(connectArgs.arguments.identifier)
                         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
                         break
@@ -64,5 +75,35 @@ export class Bridge {
                 }
             },
         )
+    }
+
+    simulate(): Promise<void> {
+        return blemulatorModule.simulate()
+    }
+
+    private setupStatePublisher() {
+        this.manager.setConnectionStatePublisher((id, state) => {
+            let stateString: string
+
+            switch (state) {
+                case ConnectionState.CONNECTED:
+                    stateString = "connected"
+                    break
+                case ConnectionState.CONNECTING:
+                    stateString = "connecting"
+                    break
+                case ConnectionState.DISCONNECTED:
+                    stateString = "disconnected"
+                    break
+                case ConnectionState.DISCONNECTING:
+                    stateString = "disconnecting"
+                    break
+                default:
+                    stateString = "unknown"
+                    break
+            }
+
+            blemulatorModule.publishConnectionState(id, stateString)
+        })
     }
 }

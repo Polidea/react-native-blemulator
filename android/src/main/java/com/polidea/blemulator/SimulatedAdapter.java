@@ -43,6 +43,17 @@ public class SimulatedAdapter implements BleAdapter {
         }
     }
 
+    public void publishConnectionState(String peripheralId, ConnectionState state) {
+        if (connectionStateCallbacks.containsKey(peripheralId)) {
+            connectionStateCallbacks.get(peripheralId).onEvent(state);
+            if (state == ConnectionState.DISCONNECTED) {
+                connectionStateCallbacks.remove(peripheralId);
+            }
+        } else {
+            throw new IllegalStateException("No connection state callback for peripheral id:" + peripheralId);
+        }
+    }
+
     @Override
     public void createClient(String restoreStateIdentifier, OnEventCallback<String> onAdapterStateChangeCallback, OnEventCallback<Integer> onStateRestored) {
         Log.i(TAG, "createClient called");
@@ -121,7 +132,7 @@ public class SimulatedAdapter implements BleAdapter {
                                 OnEventCallback<ConnectionState> onConnectionStateChangedCallback,
                                 OnErrorCallback onErrorCallback) {
         Log.i(TAG, "connectToDevice called");
-        connectionStateCallbacks.put(deviceIdentifier, onConnectionStateChangedCallback); //TODO #16 remove listener when device is disconnected
+        connectionStateCallbacks.put(deviceIdentifier, onConnectionStateChangedCallback);
         OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
             @Override
             public void onSuccess(Device data) {

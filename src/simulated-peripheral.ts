@@ -1,8 +1,9 @@
-import { Base64, UUID, ConnectionState } from "./types";
+import { Base64, UUID, ConnectionState, ConnectionStateListener, Subscription } from "./types";
 import { SimulatedService } from "./simulated-service";
 import { SimulatedCharacteristic } from "./simulated-characteristic";
 import { SimulatedDescriptor } from "./simulated-descriptor";
 import { ScanResult } from "./scan-result";
+import { IdGenerator } from "./internal/utils";
 
 const DEFAULT_MTU = 23
 
@@ -33,6 +34,7 @@ export class SimulatedPeripheral {
     private _isConnected: boolean = false
     private _disconnectionPending: boolean = false
     private isDiscoveryDone: boolean = false
+    private connectionStateListeners: Map<number, ConnectionStateListener> = new Map()
 
     constructor({
         name, id, advertisementInterval, services, rssi = -30, txPowerLevel, isConnectable = true,
@@ -69,7 +71,7 @@ export class SimulatedPeripheral {
             txPowerLevel: this.scanInfo.txPowerLevel, isConnectable: this.scanInfo.isConnectable,
             manufacturerData: this.scanInfo.manufacturerData, serviceData: this.scanInfo.serviceData,
             serviceUuids: this.scanInfo.serviceUuids, solicitedServiceUuids: this.scanInfo.solicitedServiceUuids,
-            localName: this.scanInfo.localName, overflowServiceUuids: this.scanInfo.overflowUuids, 
+            localName: this.scanInfo.localName, overflowServiceUuids: this.scanInfo.overflowUuids,
         })
     }
 
@@ -84,18 +86,38 @@ export class SimulatedPeripheral {
     }
 
     async onDisconnect(): Promise<void> {
-        this._isConnected = false
-        this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
+        if (this._isConnected) {
+            this._isConnected = false
+            this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
+        }
+    }
+
+    listenToConnectionStateChanges(listener: ConnectionStateListener): Subscription {
+        let id = IdGenerator.nextId()
+        this.connectionStateListeners.set(id, listener)
+
+        const that = this
+        return {
+            dispose() {
+                that.connectionStateListeners.delete(id)
+            }
+        }
     }
 
     isConnected(): boolean {
         return this._isConnected
     }
 
-    isDisconnectionPending(): boolean {
+    /// Part of internal API, do not use
+    disconnectIfDisconnectionPending(): boolean {
+        if (this._disconnectionPending) {
+            //TODO This can be moved to connection-delegate
+            this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
+        }
         return this._disconnectionPending
     }
 
+    /// Part of internal API, do not use
     setIsDisconnectionPending(disconnectionPending: boolean): void {
         this._disconnectionPending = disconnectionPending
     }
@@ -155,6 +177,6 @@ export class SimulatedPeripheral {
 
     private onConnectionStateChanged(newConnectionState: ConnectionState): void {
         console.log(`P:id "${this.id}"; state: ${newConnectionState}`) //TODO should this somehow be exposed to user? Maybe switched on or off somehow?
-        //TODO #16
+        Array.from(this.connectionStateListeners.values()).forEach((listener) => listener(newConnectionState))
     }
 }
