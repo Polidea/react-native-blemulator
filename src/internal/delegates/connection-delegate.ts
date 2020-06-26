@@ -6,6 +6,7 @@ import { AdapterState, ConnectionState, Subscription } from "../../types";
 export class ConnectionDelegate {
     private connectionStatePublisher: ((id: string, state: ConnectionState) => void) | undefined = undefined
     private connectionStateSubscriptions: Map<string, Subscription> = new Map()
+    private pendingDisconnections: Map<string, boolean> = new Map()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => void) {
         this.connectionStatePublisher = publisher
@@ -22,7 +23,7 @@ export class ConnectionDelegate {
             errorIfUnknown(peripherals, peripheralIdentifier)
             errorIfConnected(peripherals, peripheralIdentifier)
             const peripheral: SimulatedPeripheral = peripherals.get(peripheralIdentifier) as SimulatedPeripheral
-            peripheral.setIsDisconnectionPending(false)
+            this.pendingDisconnections.set(peripheralIdentifier, false)
 
             const subscription = peripheral.listenToConnectionStateChanges((state) => {
                 if (this.connectionStatePublisher) {
@@ -37,15 +38,19 @@ export class ConnectionDelegate {
 
             const willConnect = await peripheral.onConnectRequest()
             if (!willConnect) {
+                peripheral.onDisconnect()
                 errorConnectionFailed(peripheralIdentifier);
             }
-            if (peripheral.disconnectIfDisconnectionPending()) {
+            if (this.pendingDisconnections.get(peripheralIdentifier)) {
+                peripheral.onDisconnect()
                 errorConnectionFailed(peripheralIdentifier);
             }
             await peripheral.onConnect()
-            if (peripheral.disconnectIfDisconnectionPending()) {
+            if (this.pendingDisconnections.get(peripheralIdentifier)) {
+                peripheral.onDisconnect()
                 errorConnectionFailed(peripheralIdentifier);
             }
+            this.pendingDisconnections.delete(peripheralIdentifier)
         } catch (error) {
             if (error instanceof SimulatedBleError)
                 return error
@@ -67,7 +72,7 @@ export class ConnectionDelegate {
             if (peripherals.get(peripheralIdentifier)?.isConnected) {
                 await peripherals.get(peripheralIdentifier)?.onDisconnect()
             } else {
-                peripherals.get(peripheralIdentifier)?.setIsDisconnectionPending(true)
+                this.pendingDisconnections.set(peripheralIdentifier, true)
             }
 
         } catch (error) {

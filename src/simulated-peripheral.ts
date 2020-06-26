@@ -32,7 +32,6 @@ export class SimulatedPeripheral {
     private characteristicsById: Map<number, SimulatedCharacteristic> = new Map<number, SimulatedCharacteristic>()
     private descriptorsById: Map<number, SimulatedDescriptor> = new Map<number, SimulatedDescriptor>()
     private _isConnected: boolean = false
-    private _disconnectionPending: boolean = false
     private isDiscoveryDone: boolean = false
     private connectionStateListeners: Map<number, ConnectionStateListener> = new Map()
 
@@ -106,20 +105,6 @@ export class SimulatedPeripheral {
 
     isConnected(): boolean {
         return this._isConnected
-    }
-
-    /// Part of internal API, do not use
-    disconnectIfDisconnectionPending(): boolean {
-        if (this._disconnectionPending) {
-            //TODO This can be moved to connection-delegate
-            this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
-        }
-        return this._disconnectionPending
-    }
-
-    /// Part of internal API, do not use
-    setIsDisconnectionPending(disconnectionPending: boolean): void {
-        this._disconnectionPending = disconnectionPending
     }
 
     getService(id: number): SimulatedService | undefined {
