@@ -12,6 +12,7 @@ import com.polidea.blemulator.parser.ScanResultParser;
 import com.polidea.multiplatformbleadapter.BleAdapter;
 import com.polidea.multiplatformbleadapter.BleAdapterCreator;
 import com.polidea.multiplatformbleadapter.BleAdapterFactory;
+import com.polidea.multiplatformbleadapter.ConnectionState;
 import com.polidea.multiplatformbleadapter.ScanResult;
 
 import androidx.annotation.NonNull;
@@ -19,7 +20,7 @@ import androidx.annotation.Nullable;
 
 public class BlemulatorModule extends ReactContextBaseJavaModule {
 
-    private static final String TAG = BlemulatorModule.class.toString();
+    private static final String TAG = BlemulatorModule.class.getName();
 
     private PlatformToJsBridge jsBridge;
     private JsCallHandler callHandler;
@@ -65,9 +66,24 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void addScanResult(ReadableMap scanResult) {
-        //TODO handle errors (#12)
+        //TODO handle errors (adapter powered off during scan, for example)
         ScanResult result = ScanResultParser.parse(scanResult);
         adapter.addScanResult(result);
+    }
+
+    @ReactMethod
+    public void publishConnectionState(String peripheralId, String connectionState) {
+        ConnectionState state = null;
+        for (ConnectionState checkedState : ConnectionState.values()) {
+            if (checkedState.value.equalsIgnoreCase(connectionState)) {
+                state = checkedState;
+                break;
+            }
+        }
+        if (state == null) {
+            throw new IllegalArgumentException(connectionState + " doesn't match any of the known values");
+        }
+        adapter.publishConnectionState(peripheralId, state);
     }
 
     @ReactMethod
