@@ -1,6 +1,7 @@
 import { SimulationManager } from './internal/simulation-manager';
 import { SimulatedPeripheral } from './simulated-peripheral';
 import { Bridge } from './internal/bridge';
+import { AdapterState } from './types';
 
 class BlemulatorInstance {
     private bridge: Bridge
@@ -18,6 +19,18 @@ class BlemulatorInstance {
 
     addPeripheral(peripheral: SimulatedPeripheral): void {
         this.manager.addPeripheral(peripheral)
+    }
+
+    setSimulatedAdapterState(adapterState: AdapterState) {
+        this.manager.setAdapterState(adapterState)
+    }
+
+    getSimulatedAdapterState(): AdapterState {
+        return this.manager.getAdapterState()
+    }
+
+    setAdapterStateChangeDelay(delay?: number) {
+        this.manager.setAdapterStateChangeDelay(delay)
     }
 }
 

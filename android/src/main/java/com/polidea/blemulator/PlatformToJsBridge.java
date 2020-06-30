@@ -27,6 +27,49 @@ public class PlatformToJsBridge {
         this.callHandler = callHandler;
     }
 
+    public void createClient() {
+        callMethod(MethodName.CREATE_CLIENT, null,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        //nothing expected
+                    }
+                });
+    }
+
+    public void enable(String transactionId, final OnSuccessCallback<Void> successCallback, final OnErrorCallback errorCallback) {
+        WritableMap args = Arguments.createMap();
+        args.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        callMethod(MethodName.ENABLE, args,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            errorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            successCallback.onSuccess(null);
+                        }
+                    }
+                });
+
+    }
+
+    public void disable(String transactionId, final OnSuccessCallback<Void> successCallback, final OnErrorCallback errorCallback) {
+        WritableMap args = Arguments.createMap();
+        args.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        callMethod(MethodName.DISABLE, args,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            errorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            successCallback.onSuccess(null);
+                        }
+                    }
+                });
+    }
+
     public void startScan(String[] filteredUUIDs,
                           int scanMode,
                           int callbackType,

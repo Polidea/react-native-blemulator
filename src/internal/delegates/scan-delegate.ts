@@ -1,11 +1,10 @@
 import { AdapterState, UUID } from "../../types"
 import { ScanResultListener } from "../simulation-manager"
 import { SimulatedBleError } from "../../ble-error"
-import { errorIfBluetoothNotOn, errorIfScanInProgress } from "../error_creator"
+import { errorIfBluetoothNotOn, errorIfScanInProgress, errorIfBluetoothNotSupported } from "../error_creator"
 import { SimulatedPeripheral } from "../../.."
 
 export class ScanDelegate {
-    private adapterState: AdapterState = AdapterState.POWERED_ON
     private addScanResult: ScanResultListener = () => { }
     private filteredUuids?: Array<UUID> = undefined
     private advertisementIntervalHandles: Array<number> = []
@@ -18,10 +17,11 @@ export class ScanDelegate {
         }
     }
 
-    startScan(peripherals: Array<SimulatedPeripheral>, filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
+    startScan(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>, filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
         callbackType: number | undefined, addScanResult: ScanResultListener): SimulatedBleError | undefined {
         try {
-            errorIfBluetoothNotOn(this.adapterState)
+            errorIfBluetoothNotSupported(adapterState)
+            errorIfBluetoothNotOn(adapterState)
             errorIfScanInProgress(this.isScanInProgress)
 
             this.addScanResult = addScanResult
