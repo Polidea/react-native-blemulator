@@ -37,12 +37,6 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
-        Log.d(TAG, "INITIALIZING BLEMULATOR MODULE");
-    }
-
-    @Override
     public void onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy();
         deregisterAdapter();

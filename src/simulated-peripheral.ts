@@ -84,9 +84,9 @@ export class SimulatedPeripheral {
         this.onConnectionStateChanged(ConnectionState.CONNECTED)
     }
 
-    async onDisconnect(): Promise<void> {
-        if (this._isConnected) {
-            this._isConnected = false
+    async onDisconnect(args?: { emit?: boolean } | undefined): Promise<void> {
+        this._isConnected = false
+        if (args?.emit) {
             this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
         }
     }

@@ -38,16 +38,16 @@ export class ConnectionDelegate {
 
             const willConnect = await peripheral.onConnectRequest()
             if (!willConnect) {
-                peripheral.onDisconnect()
+                peripheral.onDisconnect({emit: true})
                 errorConnectionFailed(peripheralIdentifier);
             }
             if (this.pendingDisconnections.get(peripheralIdentifier)) {
-                peripheral.onDisconnect()
+                peripheral.onDisconnect({emit: true})
                 errorConnectionFailed(peripheralIdentifier);
             }
             await peripheral.onConnect()
             if (this.pendingDisconnections.get(peripheralIdentifier)) {
-                peripheral.onDisconnect()
+                peripheral.onDisconnect({emit: true})
                 errorConnectionFailed(peripheralIdentifier);
             }
             this.pendingDisconnections.delete(peripheralIdentifier)
@@ -70,7 +70,7 @@ export class ConnectionDelegate {
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
             if (peripherals.get(peripheralIdentifier)?.isConnected) {
-                await peripherals.get(peripheralIdentifier)?.onDisconnect()
+                await peripherals.get(peripheralIdentifier)?.onDisconnect({emit: true})
             } else {
                 this.pendingDisconnections.set(peripheralIdentifier, true)
             }
