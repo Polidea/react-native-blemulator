@@ -15,4 +15,6 @@ public interface MethodName {
     String IS_DEVICE_CONNECTED = "isDeviceConnected";
 
     String DISCOVERY = "discovery";
+
+    String REQUEST_MTU = "requestMtu";
 }

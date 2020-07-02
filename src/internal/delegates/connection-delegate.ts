@@ -2,6 +2,9 @@ import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
 import { errorIfUnknown, errorIfConnected, errorIfNotConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported } from "../error_creator";
 import { AdapterState, ConnectionState, Subscription } from "../../types";
+import { Platform } from 'react-native';
+import { MAX_iOS_MTU } from './mtu-delegate'
+
 
 export class ConnectionDelegate {
     private connectionStatePublisher: ((id: string, state: ConnectionState) => void) | undefined = undefined
@@ -15,7 +18,8 @@ export class ConnectionDelegate {
     async connect(
         adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
-        peripheralIdentifier: string
+        peripheralIdentifier: string,
+        requestMtu?: number
     ): Promise<SimulatedBleError | undefined> {
 
         try {
@@ -47,11 +51,17 @@ export class ConnectionDelegate {
                 errorConnectionFailed(peripheralIdentifier);
             }
             await peripheral.onConnect()
+            if (Platform.OS === "ios") {
+                await peripheral.onRequestMtu(MAX_iOS_MTU)
+            } else if (requestMtu && requestMtu > 0) {
+                await peripheral.onRequestMtu(requestMtu)
+            }
             if (this.pendingDisconnections.get(peripheralIdentifier)) {
                 peripheral.onDisconnect({ emit: true })
                 errorConnectionFailed(peripheralIdentifier);
             }
             this.pendingDisconnections.delete(peripheralIdentifier)
+    
         } catch (error) {
             if (error instanceof SimulatedBleError)
                 return error

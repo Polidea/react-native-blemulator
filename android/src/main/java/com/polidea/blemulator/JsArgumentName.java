@@ -12,4 +12,5 @@ public interface JsArgumentName {
     String REQUEST_MTU = "requestMtu";
     String REFRESH_GATT = "refreshGatt";
     String TIMEOUT = "timeout";
+    String MTU = "mtu";
 }

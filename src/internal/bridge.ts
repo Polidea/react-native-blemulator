@@ -36,6 +36,7 @@ enum MethodName {
     DISABLE = "disable",
     GET_CURRENT_STATE = "getCurrentState",
     DISCOVERY = "discovery",
+    REQUEST_MTU = "requestMtu"
 }
 
 export class Bridge {
@@ -90,7 +91,7 @@ export class Bridge {
                                 identifier: string, isAutoConnect?: boolean, requestMtu?: number, refreshGatt?: boolean, timeout?: number
                             }
                         }
-                        error = await this.manager.connect(connectArgs.arguments.identifier)
+                        error = await this.manager.connect(connectArgs.arguments.identifier, connectArgs.arguments.requestMtu)
                         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
                         break
                     case MethodName.DISCONNECT:
@@ -118,6 +119,17 @@ export class Bridge {
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
                         }
+                    case MethodName.REQUEST_MTU:
+                        let mtuResult: SimulatedBleError | number
+                        const requestMtuArgs = args as MethodCallArguments & { arguments: { identifier: string, mtu: number } }
+                        mtuResult = await this.manager.requestMtu(requestMtuArgs.arguments.identifier, requestMtuArgs.arguments.mtu)
+                        let data: { error?: SimulatedBleError, value?: number }
+                        if (mtuResult instanceof SimulatedBleError) {
+                            data = { error: mtuResult }
+                        } else {
+                            data = { value: mtuResult }    
+                        }
+                        blemulatorModule.handleReturnCall(args.callbackId, data)
                         break
                     default:
                         console.log("Uknown method requested")

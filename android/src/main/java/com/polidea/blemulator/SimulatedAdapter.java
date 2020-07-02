@@ -132,8 +132,17 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void requestMTUForDevice(String deviceIdentifier, int mtu, String transactionId, OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "requestMTUForDevice called");
+    public void requestMTUForDevice(final String deviceIdentifier, int mtu, String transactionId, final OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+        Log.i(TAG, "requestMTUForDevice called, mtu: "  + mtu);
+        OnSuccessCallback<Integer> modifiedOnSuccessCallback = new OnSuccessCallback<Integer>() {
+            @Override
+            public void onSuccess(Integer mtu) {
+                Device device = peripherals.get(deviceIdentifier);
+                device.setMtu(mtu);
+                onSuccessCallback.onSuccess(device);
+            }
+        };
+        bridge.requestMtu(deviceIdentifier, mtu, modifiedOnSuccessCallback, onErrorCallback);
     }
 
     @Override

@@ -34,4 +34,7 @@ public interface NativeArgumentName {
     String DESCRIPTORS = "descriptors";
     String CHARACTERISTIC_ID = "characteristicId";
     String CHARACTERISTIC_UUID = "characteristicUuid";
+    
+    //RequestMtu
+    String MTU = "mtu";
 }
