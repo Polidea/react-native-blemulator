@@ -37,6 +37,15 @@ public class PlatformToJsBridge {
                 });
     }
 
+    public void destroyClient() {
+        callMethod(MethodName.DESTROY_CLIENT, null, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                //nothing expected
+            }
+        });
+    }
+
     public void enable(String transactionId, final OnSuccessCallback<Void> successCallback, final OnErrorCallback errorCallback) {
         WritableMap args = Arguments.createMap();
         args.putString(JsArgumentName.TRANSACTION_ID, transactionId);

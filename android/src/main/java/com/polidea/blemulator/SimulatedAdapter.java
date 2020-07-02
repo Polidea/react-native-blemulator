@@ -76,6 +76,7 @@ public class SimulatedAdapter implements BleAdapter {
     public void destroyClient() {
         Log.i(TAG, "destroyClient called");
         this.onAdapterStateChangeCallback = null;
+        bridge.destroyClient();
         module.deregisterAdapter();
     }
 
