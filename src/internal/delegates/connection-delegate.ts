@@ -1,6 +1,6 @@
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfUnknown, errorIfConnected, errorIfNotConnected, errorIfBluetoothNotOn, errorConnectionFailed } from "../error_creator";
+import { errorIfUnknown, errorIfConnected, errorIfNotConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported } from "../error_creator";
 import { AdapterState, ConnectionState, Subscription } from "../../types";
 
 export class ConnectionDelegate {
@@ -19,6 +19,7 @@ export class ConnectionDelegate {
     ): Promise<SimulatedBleError | undefined> {
 
         try {
+            errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
             errorIfConnected(peripherals, peripheralIdentifier)
@@ -67,6 +68,7 @@ export class ConnectionDelegate {
     ): Promise<SimulatedBleError | undefined> {
 
         try {
+            errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
             if (peripherals.get(peripheralIdentifier)?.isConnected) {
@@ -89,6 +91,7 @@ export class ConnectionDelegate {
         peripheralIdentifier: string): Promise<boolean | SimulatedBleError | undefined> {
 
         try {
+            errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
             return peripherals.get(peripheralIdentifier)?.isConnected()

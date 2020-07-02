@@ -11,6 +11,15 @@ export function errorIfScanInProgress(isScanInProgress: boolean): void {
     }
 }
 
+export function errorIfBluetoothNotSupported(adapterState: AdapterState): void {
+    if (adapterState === AdapterState.UNSUPPORTED) {
+        throw new SimulatedBleError({
+            errorCode: BleErrorCode.BluetoothUnsupported,
+            message: "Bluetooth unsupported",
+        })
+    }
+}
+
 export function errorIfBluetoothNotOn(adapterState: AdapterState): void {
     if (adapterState !== AdapterState.POWERED_ON) {
         throw new SimulatedBleError({

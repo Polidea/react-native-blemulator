@@ -65,6 +65,11 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void publishAdapterState(String serializedAdapterState) {
+        adapter.publishAdapterState(serializedAdapterState);
+    }
+
+    @ReactMethod
     public void addScanResult(ReadableMap scanResult) {
         //TODO handle errors (adapter powered off during scan, for example)
         ScanResult result = ScanResultParser.parse(scanResult);

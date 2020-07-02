@@ -14,6 +14,7 @@ import com.polidea.multiplatformbleadapter.OnSuccessCallback;
 import com.polidea.multiplatformbleadapter.ScanResult;
 import com.polidea.multiplatformbleadapter.Service;
 import com.polidea.multiplatformbleadapter.errors.BleError;
+import com.polidea.multiplatformbleadapter.utils.Constants;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,8 @@ public class SimulatedAdapter implements BleAdapter {
     private final BlemulatorModule module;
     private final PlatformToJsBridge bridge;
 
+    private @Constants.BluetoothState String adapterState = Constants.BluetoothState.UNKNOWN;
+    private OnEventCallback<String> onAdapterStateChangeCallback = null;
     private OnEventCallback<ScanResult> scanResultCallback = null;
     private Map<String, Device> peripherals = new HashMap<>();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
@@ -43,6 +46,13 @@ public class SimulatedAdapter implements BleAdapter {
         }
     }
 
+    public void  publishAdapterState(@Constants.BluetoothState String newState) {
+        adapterState = newState;
+        if (onAdapterStateChangeCallback != null) {
+            onAdapterStateChangeCallback.onEvent(newState);
+        }
+    }
+
     public void publishConnectionState(String peripheralId, ConnectionState state) {
         if (connectionStateCallbacks.containsKey(peripheralId)) {
             connectionStateCallbacks.get(peripheralId).onEvent(state);
@@ -57,29 +67,35 @@ public class SimulatedAdapter implements BleAdapter {
     @Override
     public void createClient(String restoreStateIdentifier, OnEventCallback<String> onAdapterStateChangeCallback, OnEventCallback<Integer> onStateRestored) {
         Log.i(TAG, "createClient called");
+        this.onAdapterStateChangeCallback = onAdapterStateChangeCallback;
         module.registerAdapter(this);
+        bridge.createClient();
     }
 
     @Override
     public void destroyClient() {
         Log.i(TAG, "destroyClient called");
+        this.onAdapterStateChangeCallback = null;
+        bridge.destroyClient();
         module.deregisterAdapter();
     }
 
     @Override
     public void enable(String transactionId, OnSuccessCallback<Void> onSuccessCallback, OnErrorCallback onErrorCallback) {
         Log.i(TAG, "enable called");
+        bridge.enable(transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override
     public void disable(String transactionId, OnSuccessCallback<Void> onSuccessCallback, OnErrorCallback onErrorCallback) {
         Log.i(TAG, "disable called");
+        bridge.disable(transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override
     public String getCurrentState() {
         Log.i(TAG, "getCurrentState called");
-        return null;
+        return adapterState;
     }
 
     @Override

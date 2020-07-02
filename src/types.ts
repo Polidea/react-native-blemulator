@@ -2,8 +2,7 @@ export type ValueListener = (newValue: Base64) => void
 export type ConnectionStateListener = (connectionState: ConnectionState) => void
 
 export enum AdapterState {
-    POWERED_ON,
-    POWERED_OFF
+    POWERED_ON = 'PoweredOn', POWERED_OFF = 'PoweredOff', UNKNOWN = 'Unknown', RESETTING = 'Resetting', UNSUPPORTED = 'Unsupported', UNAUTHORIZED = 'Unauthorized'
 }
 
 export enum ConnectionState {
