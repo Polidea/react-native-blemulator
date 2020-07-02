@@ -65,3 +65,14 @@ export function errorIfNotConnected(peripheralsById: Map<string, SimulatedPeriph
         throw error
     }
 }
+
+
+export function errorIfDisconnected(peripheralsById: Map<string, SimulatedPeripheral>, peripheralIdentifier: string): void {
+    if (!peripheralsById.get(peripheralIdentifier)?.isConnected()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceDisconnected,
+            message: `Peripheral with identifier ${peripheralIdentifier} has disconnected`
+        })
+        throw error
+    }
+}

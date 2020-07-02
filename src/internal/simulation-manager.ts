@@ -5,6 +5,8 @@ import { SimulatedBleError } from '../ble-error'
 import { ConnectionDelegate } from './delegates/connection-delegate'
 import { ScanDelegate } from './delegates/scan-delegate'
 import { AdapterStateDelegate, AdapterStateChangeListener } from './delegates/adapter-state-delegate'
+import { SimulatedService } from '../simulated-service'
+import { DiscoveryDelegate } from './delegates/discovery-delegate'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
 
@@ -14,6 +16,7 @@ export class SimulationManager {
     private scanDelegate: ScanDelegate = new ScanDelegate()
     private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
+    private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
@@ -67,5 +70,9 @@ export class SimulationManager {
 
     async disable(): Promise<SimulatedBleError | undefined> {
         return this.adapterStateDelegate.disable()
+    }
+
+    async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
+        return this.discoveryDelegate.discovery(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier)
     }
 }

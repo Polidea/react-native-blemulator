@@ -85,6 +85,10 @@ export class SimulatedCharacteristic {
         }
     }
 
+    getValue(): Base64 {
+        return this.value
+    }
+
     getDescriptors(): Array<SimulatedDescriptor> {
         return Array.from(this.descriptorsById.values())
     }

@@ -45,4 +45,8 @@ export class SimulatedDescriptor {
             }
         }
     }
+
+    getValue(): Base64 {
+        return this.value
+    }
 }

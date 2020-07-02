@@ -12,4 +12,6 @@ public interface MethodName {
 
     String CONNECT = "connect";
     String CANCEL_CONNECTION_OR_DISCONNECT = "disconnect";
+
+    String DISCOVERY = "discovery";
 }
