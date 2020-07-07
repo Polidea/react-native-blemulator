@@ -16,6 +16,7 @@ public class DeviceManager {
                 break;
             case DISCONNECTED:
                 deviceContainers.get(deviceId).clear();
+                break;
         }
     }
 

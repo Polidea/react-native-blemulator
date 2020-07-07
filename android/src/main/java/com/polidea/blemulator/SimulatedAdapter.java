@@ -35,8 +35,6 @@ public class SimulatedAdapter implements BleAdapter {
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
     private OnEventCallback<ScanResult> scanResultCallback = null;
     private DeviceManager deviceManager = new DeviceManager();
-    private Map<Integer, Service> knownServices = new HashMap<>();
-    private Map<Integer, Characteristic> knownCharacteristics = new HashMap<>();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
