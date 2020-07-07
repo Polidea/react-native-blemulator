@@ -6,6 +6,7 @@ import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
 import { SimulatedCharacteristic } from "../simulated-characteristic";
 import { SimulatedService } from "../simulated-service";
 import { SimulatedDescriptor } from "../simulated-descriptor";
+import { TransferCharacteristic, TransferDescriptor, TransferService, mapToTransferService } from "./internal-types";
 
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
@@ -36,6 +37,9 @@ enum MethodName {
     DISABLE = "disable",
     GET_CURRENT_STATE = "getCurrentState",
     DISCOVERY = "discovery",
+    READ_CHARACTERISTIC = "readCharacteristic",
+    READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
+    READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice"
 }
 
 export class Bridge {
@@ -106,7 +110,7 @@ export class Bridge {
                             blemulatorModule.handleReturnCall(args.callbackId, { error: result })
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, {
-                                value: result.map((service: SimulatedService) => this.mapToTransferService(service, discoveryArgs.arguments.identifier))
+                                value: result.map((service: SimulatedService) => mapToTransferService(service, discoveryArgs.arguments.identifier))
                             })
                         }
                         break
@@ -117,6 +121,42 @@ export class Bridge {
                             blemulatorModule.handleReturnCall(args.callbackId, { error: isDeviceConnectedResult })
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
+                        }
+                        break
+                    case MethodName.READ_CHARACTERISTIC:
+                        const readCharacteristicArgs = args as MethodCallArguments & { arguments: { characteristicId: number, transactionId: string } }
+                        const readCharacteristicResult: SimulatedBleError | TransferCharacteristic = await this.manager.readCharacteristic(readCharacteristicArgs.arguments.characteristicId)
+                        if (readCharacteristicResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicResult })
+                        }
+                        break
+                    case MethodName.READ_CHARACTERISTIC_FOR_SERVICE:
+                        const readCharacteristicForServiceArgs = args as MethodCallArguments & { arguments: { serviceId: number, characteristicUuid: UUID, transactionId: string } }
+                        const readCharacteristicForServiceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.readCharacteristicForService(
+                                readCharacteristicForServiceArgs.arguments.serviceId,
+                                readCharacteristicForServiceArgs.arguments.characteristicUuid
+                            )
+                        if (readCharacteristicForServiceResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicForServiceResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForServiceResult })
+                        }
+                        break
+                    case MethodName.READ_CHARACTERISTIC_FOR_DEVICE:
+                        const readCharacteristicForDeviceArgs = args as MethodCallArguments & { arguments: { identifier: string, serviceUuid: UUID, characteristicUuid: UUID, transactionId: string } }
+                        const readCharacteristicForDeviceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.readCharacteristicForDevice(
+                                readCharacteristicForDeviceArgs.arguments.identifier,
+                                readCharacteristicForDeviceArgs.arguments.serviceUuid,
+                                readCharacteristicForDeviceArgs.arguments.characteristicUuid
+                            )
+                        if (readCharacteristicForDeviceResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicForDeviceResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForDeviceResult })
                         }
                         break
                     default:
@@ -155,78 +195,4 @@ export class Bridge {
             blemulatorModule.publishConnectionState(id, stateString)
         })
     }
-
-    private mapToTransferService(service: SimulatedService, peripheralId: string): TransferService {
-        return {
-            peripheralId: peripheralId,
-            id: service.id,
-            uuid: service.uuid,
-            characteristics: service.getCharacteristics().map((charateristic) => this.mapToTransferCharacteristic(charateristic, peripheralId))
-        }
-    }
-
-    private mapToTransferCharacteristic(characteristic: SimulatedCharacteristic, peripheralId: string, addValue?: boolean): TransferCharacteristic {
-        return {
-            peripheralId: peripheralId,
-            id: characteristic.id,
-            uuid: characteristic.uuid,
-            serviceId: characteristic.service!.id,
-            serviceUuid: characteristic.service!.uuid,
-            isReadable: characteristic.isReadable,
-            isIndicatable: characteristic.isIndicatable,
-            isNotifiable: characteristic.isNotifiable,
-            isNotifying: characteristic.isNotifying,
-            isWritableWithResponse: characteristic.isWritableWithResponse,
-            isWritableWithoutResponse: characteristic.isWritableWithoutResponse,
-            descriptors: characteristic.getDescriptors().map((descriptor) => this.mapToTransferDescriptor(descriptor, peripheralId)),
-            value: addValue ? characteristic.getValue() : undefined
-        }
-    }
-
-    private mapToTransferDescriptor(descriptor: SimulatedDescriptor, peripheralId: string, addValue?: boolean): TransferDescriptor {
-        return {
-            peripheralId: peripheralId,
-            id: descriptor.id,
-            uuid: descriptor.uuid,
-            characteristicId: descriptor.characteristic!.id,
-            characteristicUuid: descriptor.characteristic!.uuid,
-            serviceId: descriptor.characteristic!.service!.id,
-            serviceUuid: descriptor.characteristic!.service!.uuid,
-            value: addValue ? descriptor.getValue() : undefined
-        }
-    }
-}
-
-interface TransferService {
-    peripheralId: string,
-    id: number,
-    uuid: UUID,
-    characteristics: Array<TransferCharacteristic>
-}
-
-interface TransferCharacteristic {
-    peripheralId: string,
-    id: number,
-    uuid: UUID,
-    serviceId: number,
-    serviceUuid: UUID,
-    isReadable: boolean,
-    isWritableWithResponse: boolean,
-    isWritableWithoutResponse: boolean,
-    isNotifiable: boolean,
-    isIndicatable: boolean,
-    isNotifying: boolean,
-    value?: Base64,
-    descriptors?: Array<TransferDescriptor>
-}
-
-interface TransferDescriptor {
-    peripheralId: string,
-    id: number,
-    uuid: UUID,
-    characteristicId: number,
-    characteristicUuid: UUID,
-    serviceId: number,
-    serviceUuid: UUID,
-    value?: Base64
 }

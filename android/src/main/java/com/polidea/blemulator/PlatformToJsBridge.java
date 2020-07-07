@@ -7,8 +7,9 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.blemulator.containers.CachedService;
-import com.polidea.blemulator.parser.DiscoveryResponseParser;
+import com.polidea.blemulator.parser.GattParser;
 import com.polidea.multiplatformbleadapter.ConnectionOptions;
 import com.polidea.multiplatformbleadapter.Device;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
@@ -25,7 +26,7 @@ public class PlatformToJsBridge {
     private static final String TAG = PlatformToJsBridge.class.getSimpleName();
     private final ReactContext reactContext;
     private final JsCallHandler callHandler;
-    private final DiscoveryResponseParser discoveryResponseParser = new DiscoveryResponseParser();
+    private final GattParser gattParser = new GattParser();
 
     public PlatformToJsBridge(ReactContext reactContext, JsCallHandler callHandler) {
         this.reactContext = reactContext;
@@ -200,11 +201,77 @@ public class PlatformToJsBridge {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
                             onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
                         } else {
-                            onSuccessCallback.onSuccess(discoveryResponseParser.parseDiscoveryResponse(args.getArray(NativeArgumentName.VALUE)));
+                            onSuccessCallback.onSuccess(gattParser.parseDiscoveryResponse(args.getArray(NativeArgumentName.VALUE)));
                         }
                     }
                 }
         );
+    }
+
+    public void readCharacteristicForDevice(String deviceIdentifier,
+                                            String serviceUUID,
+                                            String characteristicUUID,
+                                            String transactionId,
+                                            final OnSuccessCallback<Characteristic> onSuccessCallback,
+                                            final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.READ_CHARACTERISTIC_FOR_DEVICE, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
+                }
+            }
+        });
+    }
+
+    public void readCharacteristicForService(int serviceIdentifier,
+                                             String characteristicUUID,
+                                             String transactionId,
+                                             final OnSuccessCallback<Characteristic> onSuccessCallback,
+                                             final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.READ_CHARACTERISTIC_FOR_SERVICE, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
+                }
+            }
+        });
+    }
+
+    public void readCharacteristic(int characteristicIdentifier,
+                                   String transactionId,
+                                   final OnSuccessCallback<Characteristic> onSuccessCallback,
+                                   final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.READ_CHARACTERISTIC, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
+                }
+            }
+        });
     }
 
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {

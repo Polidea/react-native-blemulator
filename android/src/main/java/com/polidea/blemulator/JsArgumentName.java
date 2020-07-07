@@ -12,4 +12,9 @@ public interface JsArgumentName {
     String REQUEST_MTU = "requestMtu";
     String REFRESH_GATT = "refreshGatt";
     String TIMEOUT = "timeout";
+
+    String SERVICE_ID = "serviceId";
+    String SERVICE_UUID = "serviceUuid";
+    String CHARACTERISTIC_ID = "characteristicId";
+    String CHARACTERISTIC_UUID = "characteristicUuid";
 }

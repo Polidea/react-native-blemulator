@@ -317,18 +317,33 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void readCharacteristicForDevice(String deviceIdentifier, String serviceUUID, String characteristicUUID, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void readCharacteristicForDevice(String deviceIdentifier,
+                                            String serviceUUID,
+                                            String characteristicUUID,
+                                            String transactionId,
+                                            OnSuccessCallback<Characteristic> onSuccessCallback,
+                                            OnErrorCallback onErrorCallback) {
         Log.i(TAG, "readCharacteristicForDevice called");
+        bridge.readCharacteristicForDevice(deviceIdentifier, serviceUUID, characteristicUUID, transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override
-    public void readCharacteristicForService(int serviceIdentifier, String characteristicUUID, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void readCharacteristicForService(int serviceIdentifier,
+                                             String characteristicUUID,
+                                             String transactionId,
+                                             OnSuccessCallback<Characteristic> onSuccessCallback,
+                                             OnErrorCallback onErrorCallback) {
         Log.i(TAG, "readCharacteristicForService called");
+        bridge.readCharacteristicForService(serviceIdentifier, characteristicUUID, transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override
-    public void readCharacteristic(int characteristicIdentifer, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void readCharacteristic(int characteristicIdentifer,
+                                   String transactionId,
+                                   OnSuccessCallback<Characteristic> onSuccessCallback,
+                                   OnErrorCallback onErrorCallback) {
         Log.i(TAG, "readCharacteristic called");
+        bridge.readCharacteristic(characteristicIdentifer, transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override

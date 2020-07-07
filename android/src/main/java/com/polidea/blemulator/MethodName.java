@@ -15,4 +15,8 @@ public interface MethodName {
     String IS_DEVICE_CONNECTED = "isDeviceConnected";
 
     String DISCOVERY = "discovery";
+
+    String READ_CHARACTERISTIC = "readCharacteristic";
+    String READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService";
+    String READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice";
 }
