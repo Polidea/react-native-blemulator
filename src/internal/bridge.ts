@@ -26,6 +26,7 @@ enum MethodName {
     STOP_SCAN = "stopScan",
     CONNECT = "connect",
     DISCONNECT = "disconnect",
+    IS_DEVICE_CONNECTED = "isDeviceConnected",
     CREATE_CLIENT = "createClient",
     DESTROY_CLIENT = "destroyClient",
     ENABLE = "enable",
@@ -92,6 +93,15 @@ export class Bridge {
                         const disconnectArgs = args as MethodCallArguments & { arguments: { identifier: string } }
                         error = await this.manager.disconnect(disconnectArgs.arguments.identifier)
                         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
+                        break
+                    case MethodName.IS_DEVICE_CONNECTED:
+                        const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
+                        let result = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
+                        if (result instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: result })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: result })
+                        }
                         break
                     default:
                         console.log("Uknown method requested")

@@ -173,8 +173,11 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void isDeviceConnected(String deviceIdentifier, OnSuccessCallback<Boolean> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void isDeviceConnected(String deviceIdentifier,
+                                  OnSuccessCallback<Boolean> onSuccessCallback,
+                                  OnErrorCallback onErrorCallback) {
         Log.i(TAG, "isDeviceConnected called");
+        bridge.isDeviceConnected(deviceIdentifier, onSuccessCallback, onErrorCallback);
     }
 
     @Override
