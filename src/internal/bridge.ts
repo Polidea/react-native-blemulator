@@ -29,6 +29,7 @@ enum MethodName {
     STOP_SCAN = "stopScan",
     CONNECT = "connect",
     DISCONNECT = "disconnect",
+    IS_DEVICE_CONNECTED = "isDeviceConnected",
     CREATE_CLIENT = "createClient",
     DESTROY_CLIENT = "destroyClient",
     ENABLE = "enable",
@@ -104,9 +105,18 @@ export class Bridge {
                         if (result instanceof SimulatedBleError) {
                             blemulatorModule.handleReturnCall(args.callbackId, { error: result })
                         } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { 
-                                value: result.map((service: SimulatedService) => this.mapToTransferService(service, discoveryArgs.arguments.identifier)) 
+                            blemulatorModule.handleReturnCall(args.callbackId, {
+                                value: result.map((service: SimulatedService) => this.mapToTransferService(service, discoveryArgs.arguments.identifier))
                             })
+                        }
+                        break
+                    case MethodName.IS_DEVICE_CONNECTED:
+                        const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
+                        let isDeviceConnectedResult = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
+                        if (isDeviceConnectedResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: isDeviceConnectedResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
                         }
                         break
                     default:

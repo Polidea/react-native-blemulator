@@ -167,6 +167,23 @@ public class PlatformToJsBridge {
                 });
     }
 
+    public void isDeviceConnected(String deviceIdentifier,
+                                  final OnSuccessCallback<Boolean> onSuccessCallback,
+                                  final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        callMethod(MethodName.IS_DEVICE_CONNECTED, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    onSuccessCallback.onSuccess(args.getBoolean(NativeArgumentName.VALUE));
+                }
+            }
+        });
+    }
+
     public void discoverAllGatts(String deviceIdentifier,
                                  String transactionId,
                                  final OnSuccessCallback<List<CachedService>> onSuccessCallback,

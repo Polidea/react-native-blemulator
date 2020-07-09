@@ -39,16 +39,16 @@ export class ConnectionDelegate {
 
             const willConnect = await peripheral.onConnectRequest()
             if (!willConnect) {
-                peripheral.onDisconnect({emit: true})
+                peripheral.onDisconnect({ emit: true })
                 errorConnectionFailed(peripheralIdentifier);
             }
             if (this.pendingDisconnections.get(peripheralIdentifier)) {
-                peripheral.onDisconnect({emit: true})
+                peripheral.onDisconnect({ emit: true })
                 errorConnectionFailed(peripheralIdentifier);
             }
             await peripheral.onConnect()
             if (this.pendingDisconnections.get(peripheralIdentifier)) {
-                peripheral.onDisconnect({emit: true})
+                peripheral.onDisconnect({ emit: true })
                 errorConnectionFailed(peripheralIdentifier);
             }
             this.pendingDisconnections.delete(peripheralIdentifier)
@@ -72,7 +72,7 @@ export class ConnectionDelegate {
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
             if (peripherals.get(peripheralIdentifier)?.isConnected) {
-                await peripherals.get(peripheralIdentifier)?.onDisconnect({emit: true})
+                await peripherals.get(peripheralIdentifier)?.onDisconnect({ emit: true })
             } else {
                 this.pendingDisconnections.set(peripheralIdentifier, true)
             }
@@ -88,18 +88,19 @@ export class ConnectionDelegate {
 
     async isConnected(adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
-        peripheralIdentifier: string): Promise<boolean | SimulatedBleError | undefined> {
+        peripheralIdentifier: string): Promise<boolean | SimulatedBleError> {
 
         try {
             errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
             errorIfUnknown(peripherals, peripheralIdentifier)
-            return peripherals.get(peripheralIdentifier)?.isConnected()
+            return peripherals.get(peripheralIdentifier)!.isConnected()
         } catch (error) {
             if (error instanceof SimulatedBleError) {
                 return error
             } else {
                 console.error(error)
+                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
             }
         }
     }
