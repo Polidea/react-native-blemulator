@@ -30,6 +30,7 @@ public class SimulatedAdapter implements BleAdapter {
     private static final String TAG =  SimulatedAdapter.class.getName();
     private final BlemulatorModule module;
     private final PlatformToJsBridge bridge;
+    private static final int UNUSED_ANDROID_ERROR_CODE = 0;
 
     private @Constants.BluetoothState String adapterState = Constants.BluetoothState.UNKNOWN;
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
@@ -206,17 +207,9 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
-
-        if (deviceContainer.getServices().isEmpty()) {
-            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertDiscoveryDone(deviceContainer);
 
         return deviceContainer.getServices();
     }
@@ -227,17 +220,9 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
-
-        if (deviceContainer.getCachedService(serviceUUID) == null || deviceContainer.getCachedService(serviceUUID).getCharacteristics().isEmpty()) {
-            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceUUID));
 
         return deviceContainer.getCachedService(serviceUUID).getCharacteristics();
     }
@@ -248,18 +233,9 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
-
-        if (deviceContainer.getCachedService(serviceIdentifier) == null
-                || deviceContainer.getCachedService(serviceIdentifier).getCharacteristics().isEmpty()) {
-            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
 
         return deviceContainer.getCachedService(serviceIdentifier).getCharacteristics();
     }
@@ -270,22 +246,12 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
-
-        if (deviceContainer.getCachedService(serviceUUID) == null || deviceContainer.getCachedService(serviceUUID).getCharacteristics().isEmpty()) {
-            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceUUID));
 
         CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceUUID).getCachedCharacteristic(characteristicUUID);
-        if (characteristic == null) {
-            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", 0);
-        }
+        assertServiceFound(characteristic);
         return characteristic.getDescriptors();
     }
 
@@ -295,22 +261,12 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
-
-        if (deviceContainer.getCachedService(serviceIdentifier) == null || deviceContainer.getCachedService(serviceIdentifier).getCharacteristics().isEmpty()) {
-            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
 
         CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceIdentifier).getCachedCharacteristic(characteristicUUID);
-        if (characteristic == null) {
-            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", 0);
-        }
+        assertServiceFound(characteristic);
 
         return characteristic.getDescriptors();
     }
@@ -321,20 +277,43 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(characteristicIdentifier);
 
-        if (deviceContainer == null) {
-            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", 0);
-        }
-
-        if (!deviceContainer.isConnected()) {
-            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", 0);
-        }
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
 
         CachedCharacteristic characteristic = deviceContainer.getCachedCharacteristic(characteristicIdentifier);
-        if (characteristic == null) {
-            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", 0);
-        }
+        assertServiceFound(characteristic);
 
         return characteristic.getDescriptors();
+    }
+
+    private void assertDeviceKnown(DeviceContainer deviceContainer) throws BleError {
+        if (deviceContainer == null) {
+            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertDeviceConnected(DeviceContainer deviceContainer) throws BleError {
+        if (!deviceContainer.isConnected()) {
+            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertDiscoveryDone(DeviceContainer deviceContainer) throws BleError {
+        if (deviceContainer.getServices().isEmpty()) {
+            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertServiceFound(CachedService service) throws BleError {
+        if (service == null) {
+            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertServiceFound(CachedCharacteristic characteristic) throws BleError {
+        if (characteristic == null) {
+            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", UNUSED_ANDROID_ERROR_CODE);
+        }
     }
 
     @Override
