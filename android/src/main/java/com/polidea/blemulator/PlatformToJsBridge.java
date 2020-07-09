@@ -7,6 +7,8 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.polidea.blemulator.containers.CachedService;
+import com.polidea.blemulator.parser.DiscoveryResponseParser;
 import com.polidea.multiplatformbleadapter.ConnectionOptions;
 import com.polidea.multiplatformbleadapter.Device;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
@@ -15,12 +17,15 @@ import com.polidea.multiplatformbleadapter.RefreshGattMoment;
 import com.polidea.multiplatformbleadapter.errors.BleError;
 import com.polidea.multiplatformbleadapter.errors.BleErrorCode;
 
+import java.util.List;
+
 import androidx.annotation.Nullable;
 
 public class PlatformToJsBridge {
     private static final String TAG = PlatformToJsBridge.class.getSimpleName();
     private final ReactContext reactContext;
     private final JsCallHandler callHandler;
+    private final DiscoveryResponseParser discoveryResponseParser = new DiscoveryResponseParser();
 
     public PlatformToJsBridge(ReactContext reactContext, JsCallHandler callHandler) {
         this.reactContext = reactContext;
@@ -177,6 +182,29 @@ public class PlatformToJsBridge {
                 }
             }
         });
+    }
+
+    public void discoverAllGatts(String deviceIdentifier,
+                                 String transactionId,
+                                 final OnSuccessCallback<List<CachedService>> onSuccessCallback,
+                                 final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        callMethod(
+                MethodName.DISCOVERY,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(discoveryResponseParser.parseDiscoveryResponse(args.getArray(NativeArgumentName.VALUE)));
+                        }
+                    }
+                }
+        );
     }
 
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {

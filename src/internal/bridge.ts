@@ -2,7 +2,10 @@ import { EventSubscriptionVendor, NativeModules, EmitterSubscription, NativeEven
 import { SimulatedBleError } from "../ble-error";
 import { ScanResult } from "../scan-result";
 import { SimulationManager } from "./simulation-manager";
-import { UUID, ConnectionState, AdapterState } from "../types";
+import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
+import { SimulatedCharacteristic } from "../simulated-characteristic";
+import { SimulatedService } from "../simulated-service";
+import { SimulatedDescriptor } from "../simulated-descriptor";
 
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
@@ -31,7 +34,8 @@ enum MethodName {
     DESTROY_CLIENT = "destroyClient",
     ENABLE = "enable",
     DISABLE = "disable",
-    GET_CURRENT_STATE = "getCurrentState"
+    GET_CURRENT_STATE = "getCurrentState",
+    DISCOVERY = "discovery",
 }
 
 export class Bridge {
@@ -94,13 +98,25 @@ export class Bridge {
                         error = await this.manager.disconnect(disconnectArgs.arguments.identifier)
                         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
                         break
-                    case MethodName.IS_DEVICE_CONNECTED:
-                        const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
-                        let result = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
+                    case MethodName.DISCOVERY:
+                        //TODO handle transactionId (store it in some object in the map to be able to flip it to cancelled)
+                        const discoveryArgs = args as MethodCallArguments & { arguments: { identifier: string } }
+                        const result = await this.manager.discovery(discoveryArgs.arguments.identifier)
                         if (result instanceof SimulatedBleError) {
                             blemulatorModule.handleReturnCall(args.callbackId, { error: result })
                         } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { value: result })
+                            blemulatorModule.handleReturnCall(args.callbackId, {
+                                value: result.map((service: SimulatedService) => this.mapToTransferService(service, discoveryArgs.arguments.identifier))
+                            })
+                        }
+                        break
+                    case MethodName.IS_DEVICE_CONNECTED:
+                        const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
+                        let isDeviceConnectedResult = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
+                        if (isDeviceConnectedResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: isDeviceConnectedResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
                         }
                         break
                     default:
@@ -139,4 +155,78 @@ export class Bridge {
             blemulatorModule.publishConnectionState(id, stateString)
         })
     }
+
+    private mapToTransferService(service: SimulatedService, peripheralId: string): TransferService {
+        return {
+            peripheralId: peripheralId,
+            id: service.id,
+            uuid: service.uuid,
+            characteristics: service.getCharacteristics().map((charateristic) => this.mapToTransferCharacteristic(charateristic, peripheralId))
+        }
+    }
+
+    private mapToTransferCharacteristic(characteristic: SimulatedCharacteristic, peripheralId: string, addValue?: boolean): TransferCharacteristic {
+        return {
+            peripheralId: peripheralId,
+            id: characteristic.id,
+            uuid: characteristic.uuid,
+            serviceId: characteristic.service!.id,
+            serviceUuid: characteristic.service!.uuid,
+            isReadable: characteristic.isReadable,
+            isIndicatable: characteristic.isIndicatable,
+            isNotifiable: characteristic.isNotifiable,
+            isNotifying: characteristic.isNotifying,
+            isWritableWithResponse: characteristic.isWritableWithResponse,
+            isWritableWithoutResponse: characteristic.isWritableWithoutResponse,
+            descriptors: characteristic.getDescriptors().map((descriptor) => this.mapToTransferDescriptor(descriptor, peripheralId)),
+            value: addValue ? characteristic.getValue() : undefined
+        }
+    }
+
+    private mapToTransferDescriptor(descriptor: SimulatedDescriptor, peripheralId: string, addValue?: boolean): TransferDescriptor {
+        return {
+            peripheralId: peripheralId,
+            id: descriptor.id,
+            uuid: descriptor.uuid,
+            characteristicId: descriptor.characteristic!.id,
+            characteristicUuid: descriptor.characteristic!.uuid,
+            serviceId: descriptor.characteristic!.service!.id,
+            serviceUuid: descriptor.characteristic!.service!.uuid,
+            value: addValue ? descriptor.getValue() : undefined
+        }
+    }
+}
+
+interface TransferService {
+    peripheralId: string,
+    id: number,
+    uuid: UUID,
+    characteristics: Array<TransferCharacteristic>
+}
+
+interface TransferCharacteristic {
+    peripheralId: string,
+    id: number,
+    uuid: UUID,
+    serviceId: number,
+    serviceUuid: UUID,
+    isReadable: boolean,
+    isWritableWithResponse: boolean,
+    isWritableWithoutResponse: boolean,
+    isNotifiable: boolean,
+    isIndicatable: boolean,
+    isNotifying: boolean,
+    value?: Base64,
+    descriptors?: Array<TransferDescriptor>
+}
+
+interface TransferDescriptor {
+    peripheralId: string,
+    id: number,
+    uuid: UUID,
+    characteristicId: number,
+    characteristicUuid: UUID,
+    serviceId: number,
+    serviceUuid: UUID,
+    value?: Base64
 }

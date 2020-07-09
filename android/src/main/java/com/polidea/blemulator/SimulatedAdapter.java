@@ -2,6 +2,10 @@ package com.polidea.blemulator;
 
 import android.util.Log;
 
+import com.polidea.blemulator.containers.CachedCharacteristic;
+import com.polidea.blemulator.containers.CachedService;
+import com.polidea.blemulator.containers.DeviceContainer;
+import com.polidea.blemulator.containers.DeviceManager;
 import com.polidea.multiplatformbleadapter.BleAdapter;
 import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.multiplatformbleadapter.ConnectionOptions;
@@ -14,6 +18,7 @@ import com.polidea.multiplatformbleadapter.OnSuccessCallback;
 import com.polidea.multiplatformbleadapter.ScanResult;
 import com.polidea.multiplatformbleadapter.Service;
 import com.polidea.multiplatformbleadapter.errors.BleError;
+import com.polidea.multiplatformbleadapter.errors.BleErrorCode;
 import com.polidea.multiplatformbleadapter.utils.Constants;
 
 import java.util.HashMap;
@@ -25,11 +30,12 @@ public class SimulatedAdapter implements BleAdapter {
     private static final String TAG =  SimulatedAdapter.class.getName();
     private final BlemulatorModule module;
     private final PlatformToJsBridge bridge;
+    private static final int UNUSED_ANDROID_ERROR_CODE = 0;
 
     private @Constants.BluetoothState String adapterState = Constants.BluetoothState.UNKNOWN;
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
     private OnEventCallback<ScanResult> scanResultCallback = null;
-    private Map<String, Device> peripherals = new HashMap<>();
+    private DeviceManager deviceManager = new DeviceManager();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
@@ -41,9 +47,7 @@ public class SimulatedAdapter implements BleAdapter {
         if (scanResultCallback != null) {
             scanResultCallback.onEvent(scanResult);
         }
-        if (!peripherals.containsKey(scanResult.getDeviceId())) {
-            peripherals.put(scanResult.getDeviceId(), new Device(scanResult.getDeviceId(), scanResult.getDeviceName()));
-        }
+        deviceManager.addDeviceIfUnknown(scanResult.getDeviceId(), scanResult.getDeviceName());
     }
 
     public void  publishAdapterState(@Constants.BluetoothState String newState) {
@@ -56,6 +60,7 @@ public class SimulatedAdapter implements BleAdapter {
     public void publishConnectionState(String peripheralId, ConnectionState state) {
         if (connectionStateCallbacks.containsKey(peripheralId)) {
             connectionStateCallbacks.get(peripheralId).onEvent(state);
+            deviceManager.updateConnectionStateForDevice(peripheralId, state);
             if (state == ConnectionState.DISCONNECTED) {
                 connectionStateCallbacks.remove(peripheralId);
             }
@@ -152,7 +157,7 @@ public class SimulatedAdapter implements BleAdapter {
         OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
             @Override
             public void onSuccess(Device data) {
-                onSuccessCallback.onSuccess(peripherals.get(deviceIdentifier));
+                onSuccessCallback.onSuccess(deviceManager.getDeviceContainer(deviceIdentifier).getDevice());
             }
         };
         bridge.connect(deviceIdentifier, connectionOptions, modifiedOnSuccessCallback, onErrorCallback);
@@ -166,7 +171,7 @@ public class SimulatedAdapter implements BleAdapter {
         OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
             @Override
             public void onSuccess(Device data) {
-                onSuccessCallback.onSuccess(peripherals.get(deviceIdentifier));
+                onSuccessCallback.onSuccess(deviceManager.getDeviceContainer(deviceIdentifier).getDevice());
             }
         };
         bridge.cancelDeviceConnection(deviceIdentifier, modifiedOnSuccessCallback, onErrorCallback);
@@ -181,44 +186,134 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void discoverAllServicesAndCharacteristicsForDevice(String deviceIdentifier, String transactionId, OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void discoverAllServicesAndCharacteristicsForDevice(final String deviceIdentifier,
+                                                               String transactionId,
+                                                               final OnSuccessCallback<Device> onSuccessCallback,
+                                                               OnErrorCallback onErrorCallback) {
         Log.i(TAG, "discoverAllServicesAndCharacteristicsForDevice called");
+        OnSuccessCallback<List<CachedService>> modifiedOnSuccess = new OnSuccessCallback<List<CachedService>>() {
+            @Override
+            public void onSuccess(List<CachedService> data) {
+                deviceManager.getDeviceContainer(deviceIdentifier).addGatts(data);
+                onSuccessCallback.onSuccess(deviceManager.getDeviceContainer(deviceIdentifier).getDevice());
+            }
+        };
+        bridge.discoverAllGatts(deviceIdentifier, transactionId, modifiedOnSuccess, onErrorCallback);
     }
 
     @Override
     public List<Service> getServicesForDevice(String deviceIdentifier) throws BleError {
         Log.i(TAG, "getServicesForDevice called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertDiscoveryDone(deviceContainer);
+
+        return deviceContainer.getServices();
     }
 
     @Override
     public List<Characteristic> getCharacteristicsForDevice(String deviceIdentifier, String serviceUUID) throws BleError {
         Log.i(TAG, "getCharacteristicsForDevice called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceUUID));
+
+        return deviceContainer.getCachedService(serviceUUID).getCharacteristics();
     }
 
     @Override
     public List<Characteristic> getCharacteristicsForService(int serviceIdentifier) throws BleError {
         Log.i(TAG, "getCharacteristicsForService called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
+
+        return deviceContainer.getCachedService(serviceIdentifier).getCharacteristics();
     }
 
     @Override
     public List<Descriptor> descriptorsForDevice(String deviceIdentifier, String serviceUUID, String characteristicUUID) throws BleError {
         Log.i(TAG, "descriptorsForDevice called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceUUID));
+
+        CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceUUID).getCachedCharacteristic(characteristicUUID);
+        assertServiceFound(characteristic);
+        return characteristic.getDescriptors();
     }
 
     @Override
     public List<Descriptor> descriptorsForService(int serviceIdentifier, String characteristicUUID) throws BleError {
         Log.i(TAG, "descriptorsForService called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
+
+        CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceIdentifier).getCachedCharacteristic(characteristicUUID);
+        assertServiceFound(characteristic);
+
+        return characteristic.getDescriptors();
     }
 
     @Override
     public List<Descriptor> descriptorsForCharacteristic(int characteristicIdentifier) throws BleError {
         Log.i(TAG, "descriptorsForCharacteristic called");
-        return null;
+
+        DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(characteristicIdentifier);
+
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+
+        CachedCharacteristic characteristic = deviceContainer.getCachedCharacteristic(characteristicIdentifier);
+        assertServiceFound(characteristic);
+
+        return characteristic.getDescriptors();
+    }
+
+    private void assertDeviceKnown(DeviceContainer deviceContainer) throws BleError {
+        if (deviceContainer == null) {
+            throw new BleError(BleErrorCode.DeviceNotFound, "Device unknown", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertDeviceConnected(DeviceContainer deviceContainer) throws BleError {
+        if (!deviceContainer.isConnected()) {
+            throw new BleError(BleErrorCode.DeviceNotConnected, "Device not connected", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertDiscoveryDone(DeviceContainer deviceContainer) throws BleError {
+        if (deviceContainer.getServices().isEmpty()) {
+            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertServiceFound(CachedService service) throws BleError {
+        if (service == null) {
+            throw new BleError(BleErrorCode.ServicesNotDiscovered, "Discovery not done on this device", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertServiceFound(CachedCharacteristic characteristic) throws BleError {
+        if (characteristic == null) {
+            throw new BleError(BleErrorCode.CharacteristicsNotDiscovered, "Discovery not done for this peripheral", UNUSED_ANDROID_ERROR_CODE);
+        }
     }
 
     @Override

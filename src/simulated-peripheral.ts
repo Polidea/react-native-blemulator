@@ -32,7 +32,7 @@ export class SimulatedPeripheral {
     private characteristicsById: Map<number, SimulatedCharacteristic> = new Map<number, SimulatedCharacteristic>()
     private descriptorsById: Map<number, SimulatedDescriptor> = new Map<number, SimulatedDescriptor>()
     private _isConnected: boolean = false
-    private isDiscoveryDone: boolean = false
+    private _isDiscoveryDone: boolean = false
     private connectionStateListeners: Map<number, ConnectionStateListener> = new Map()
 
     constructor({
@@ -86,9 +86,14 @@ export class SimulatedPeripheral {
 
     async onDisconnect(args?: { emit?: boolean } | undefined): Promise<void> {
         this._isConnected = false
+        this._isDiscoveryDone = false
         if (args?.emit) {
             this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
         }
+    }
+
+    async onDiscovery(): Promise<void> {
+        this._isDiscoveryDone = true
     }
 
     listenToConnectionStateChanges(listener: ConnectionStateListener): Subscription {
@@ -105,6 +110,14 @@ export class SimulatedPeripheral {
 
     isConnected(): boolean {
         return this._isConnected
+    }
+
+    isDiscoveryDone(): boolean {
+        return this._isDiscoveryDone;
+    }
+
+    getServices(): Array<SimulatedService> {
+        return Array.from(this.servicesByUuid.values())
     }
 
     getService(id: number): SimulatedService | undefined {
