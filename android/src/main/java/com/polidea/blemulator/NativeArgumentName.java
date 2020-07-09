@@ -6,6 +6,7 @@ public interface NativeArgumentName {
     String ERROR_CODE = "errorCode";
     String ERROR_MESSAGE = "message";
     String ID = "id";
+    String VALUE = "value";
 
     //ScanResult
     String NAME = "name";

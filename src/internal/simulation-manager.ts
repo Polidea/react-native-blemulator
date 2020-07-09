@@ -61,6 +61,10 @@ export class SimulationManager {
             this.peripheralsById, peripheralIdentifier)
     }
 
+    async isDeviceConnected(peripheralIdentifier: string): Promise<SimulatedBleError | boolean> {
+        return this.connectionDelegate.isConnected(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier);
+    }
+
     async enable(): Promise<SimulatedBleError | undefined> {
         return this.adapterStateDelegate.enable()
     }
