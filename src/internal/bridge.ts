@@ -2,11 +2,9 @@ import { EventSubscriptionVendor, NativeModules, EmitterSubscription, NativeEven
 import { SimulatedBleError } from "../ble-error";
 import { ScanResult } from "../scan-result";
 import { SimulationManager } from "./simulation-manager";
-import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
-import { SimulatedCharacteristic } from "../simulated-characteristic";
+import { UUID, ConnectionState, AdapterState } from "../types";
 import { SimulatedService } from "../simulated-service";
-import { SimulatedDescriptor } from "../simulated-descriptor";
-import { TransferCharacteristic, TransferDescriptor, TransferService, mapToTransferService } from "./internal-types";
+import { TransferCharacteristic, mapToTransferService } from "./internal-types";
 
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
@@ -14,6 +12,7 @@ interface BlemulatorModuleInterface {
     addScanResult(scanResult: ScanResult): void
     publishConnectionState(peripheralId: string, connectionState: string): void
     publishAdapterState(state: String): void
+    publishCharacteristicNotification(transactionId: string, characteristic: TransferCharacteristic | null, error: SimulatedBleError | null): void
     simulate(): Promise<void>
 }
 
@@ -39,7 +38,10 @@ enum MethodName {
     DISCOVERY = "discovery",
     READ_CHARACTERISTIC = "readCharacteristic",
     READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
-    READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice"
+    READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice",
+    MONITOR_CHARACTERISTIC = "monitorCharacteristic",
+    MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService",
+    MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice",
 }
 
 export class Bridge {
@@ -52,6 +54,9 @@ export class Bridge {
         this.blemulatorModule = blemulatorModule
 
         this.setupConnectionStatePublisher()
+        this.manager.setNotificationPublisher((transactionId, characteristic, error) => { 
+            blemulatorModule.publishCharacteristicNotification(transactionId, characteristic, error ? error : null) 
+        })
 
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
@@ -159,6 +164,51 @@ export class Bridge {
                             blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForDeviceResult })
                         }
                         break
+                    case MethodName.MONITOR_CHARACTERISTIC:
+                        const monitorCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: {
+                                characteristicId: number,
+                                transactionId: string
+                            }
+                        }
+                        this.manager.monitorCharacteristic(
+                            monitorCharacteristicArgs.arguments.characteristicId,
+                            monitorCharacteristicArgs.arguments.transactionId
+                        )
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
+                    case MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE:
+                        const monitorCharacteristicForServiceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                serviceId: number,
+                                characteristicUuid: UUID,
+                                transactionId: string
+                            }
+                        }
+                        this.manager.monitorCharacteristicForService(
+                            monitorCharacteristicForServiceArgs.arguments.serviceId,
+                            monitorCharacteristicForServiceArgs.arguments.characteristicUuid,
+                            monitorCharacteristicForServiceArgs.arguments.transactionId
+                        )
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
+                    case MethodName.MONITOR_CHARACTERISTIC_FOR_DEVICE:
+                        const monitorCharacteristicForDeviceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                identifier: string,
+                                serviceUuid: UUID,
+                                characteristicUuid: UUID,
+                                transactionId: string
+                            }
+                        }
+                        this.manager.monitorCharacteristicForDevice(
+                            monitorCharacteristicForDeviceArgs.arguments.identifier,
+                            monitorCharacteristicForDeviceArgs.arguments.serviceUuid,
+                            monitorCharacteristicForDeviceArgs.arguments.characteristicUuid,
+                            monitorCharacteristicForDeviceArgs.arguments.transactionId
+                        )
+                        blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
                     default:
                         console.log("Uknown method requested")
                 }
@@ -171,7 +221,7 @@ export class Bridge {
     }
 
     private setupConnectionStatePublisher() {
-        this.manager.setConnectionStatePublisher((id, state) => {
+        this.manager.setConnectionStatePublisher((peripheralId, state) => {
             let stateString: string
 
             switch (state) {
@@ -192,7 +242,7 @@ export class Bridge {
                     break
             }
 
-            blemulatorModule.publishConnectionState(id, stateString)
+            blemulatorModule.publishConnectionState(peripheralId, stateString)
         })
     }
 }

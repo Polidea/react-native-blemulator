@@ -7,9 +7,10 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.blemulator.containers.CachedService;
+import com.polidea.blemulator.parser.ErrorParser;
 import com.polidea.blemulator.parser.GattParser;
+import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.multiplatformbleadapter.ConnectionOptions;
 import com.polidea.multiplatformbleadapter.Device;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
@@ -27,6 +28,7 @@ public class PlatformToJsBridge {
     private final ReactContext reactContext;
     private final JsCallHandler callHandler;
     private final GattParser gattParser = new GattParser();
+    private final ErrorParser errorParser = new ErrorParser();
 
     public PlatformToJsBridge(ReactContext reactContext, JsCallHandler callHandler) {
         this.reactContext = reactContext;
@@ -60,7 +62,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            errorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                            errorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                         } else {
                             successCallback.onSuccess(null);
                         }
@@ -77,7 +79,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            errorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                            errorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                         } else {
                             successCallback.onSuccess(null);
                         }
@@ -107,7 +109,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                         }
                     }
                 }
@@ -140,7 +142,7 @@ public class PlatformToJsBridge {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                    onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
                     onSuccessCallback.onSuccess(null);
                 }
@@ -160,7 +162,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                         } else {
                             onSuccessCallback.onSuccess(null);
                         }
@@ -177,7 +179,7 @@ public class PlatformToJsBridge {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                    onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
                     onSuccessCallback.onSuccess(args.getBoolean(NativeArgumentName.VALUE));
                 }
@@ -199,7 +201,7 @@ public class PlatformToJsBridge {
                     @Override
                     public void invoke(ReadableMap args) {
                         if (args.hasKey(NativeArgumentName.ERROR)) {
-                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                         } else {
                             onSuccessCallback.onSuccess(gattParser.parseDiscoveryResponse(args.getArray(NativeArgumentName.VALUE)));
                         }
@@ -224,7 +226,7 @@ public class PlatformToJsBridge {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                    onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
                     onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
                 }
@@ -246,7 +248,7 @@ public class PlatformToJsBridge {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                    onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
                     onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
                 }
@@ -266,10 +268,61 @@ public class PlatformToJsBridge {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                    onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
                     onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
                 }
+            }
+        });
+    }
+
+    public void monitorCharacteristicForDevice(String deviceIdentifier,
+                                               String serviceUUID,
+                                               String characteristicUUID,
+                                               String transactionId) {
+        Log.i(TAG, "monitorCharacteristicForDevice called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.MONITOR_CHARACTERISTIC_FOR_DEVICE, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                //any errors will be handled in SimulatedAdapter.publishNotification()
+            }
+        });
+    }
+
+    public void monitorCharacteristicForService(int serviceIdentifier,
+                                                String characteristicUUID,
+                                                String transactionId) {
+        Log.i(TAG, "monitorCharacteristicForService called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                //any errors will be handled in SimulatedAdapter.publishNotification()
+            }
+        });
+    }
+
+    public void monitorCharacteristic(int characteristicIdentifier,
+                                      String transactionId) {
+        Log.i(TAG, "monitorCharacteristic called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE, arguments, new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                //any errors will be handled in SimulatedAdapter.publishNotification()
             }
         });
     }
@@ -281,18 +334,6 @@ public class PlatformToJsBridge {
         params.putString("callbackId", callbackId);
         params.putMap("arguments", arguments);
         callJsMethod(params);
-    }
-
-    private BleError parseError(ReadableMap mappedError) {
-        BleErrorCode matchedErrorCode = BleErrorCode.UnknownError;
-        int incomingErrorCode = mappedError.getInt(NativeArgumentName.ERROR_CODE);
-        for (BleErrorCode value : BleErrorCode.values()) {
-            if (value.code == incomingErrorCode) {
-                matchedErrorCode = value;
-                break;
-            }
-        }
-        return new BleError(matchedErrorCode, mappedError.getString(NativeArgumentName.ERROR_MESSAGE), -1);
     }
 
     private void callJsMethod(ReadableMap params) {

@@ -8,12 +8,16 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
+import com.polidea.blemulator.parser.ErrorParser;
+import com.polidea.blemulator.parser.GattParser;
 import com.polidea.blemulator.parser.ScanResultParser;
 import com.polidea.multiplatformbleadapter.BleAdapter;
 import com.polidea.multiplatformbleadapter.BleAdapterCreator;
 import com.polidea.multiplatformbleadapter.BleAdapterFactory;
+import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.multiplatformbleadapter.ConnectionState;
 import com.polidea.multiplatformbleadapter.ScanResult;
+import com.polidea.multiplatformbleadapter.errors.BleError;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +29,8 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     private PlatformToJsBridge jsBridge;
     private JsCallHandler callHandler;
     private SimulatedAdapter adapter = null;
+    private GattParser gattParser = new GattParser();
+    private ErrorParser errorParser = new ErrorParser();
 
     public BlemulatorModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -89,6 +95,18 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
             throw new IllegalArgumentException(connectionState + " doesn't match any of the known values");
         }
         adapter.publishConnectionState(peripheralId, state);
+    }
+
+    @ReactMethod
+    public void publishCharacteristicNotification(String transactionId, ReadableMap serializedCharacteristic, ReadableMap serializedError) {
+        Log.d(TAG, "Received " + transactionId);
+        Characteristic characteristic = serializedCharacteristic != null ? gattParser.parseCharacteristic(serializedCharacteristic, null).getCharacteristic() : null;
+        BleError error = serializedError != null ? errorParser.parseError(serializedError) : null;
+        adapter.publishNotification(
+                transactionId,
+                characteristic,
+                error
+        );
     }
 
     @ReactMethod

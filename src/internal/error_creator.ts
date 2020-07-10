@@ -130,3 +130,13 @@ export function errorIfCharacteristicNotFound(characteristic?: SimulatedCharacte
         throw error
     }
 }
+
+export function errorIfNotMonitorable(characteristic: SimulatedCharacteristic): void {
+    if (!characteristic.isIndicatable && !characteristic.isNotifiable) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicNotifyChangeFailed,
+            message: `Characteristic(serviceUuid: ${characteristic.service?.uuid}, uuid: ${characteristic.uuid}) does not support either notifications or indications`
+        })
+        throw error
+    }
+}
