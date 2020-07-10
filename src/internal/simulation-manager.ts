@@ -22,9 +22,14 @@ export class SimulationManager {
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate()
     private mtuDelegate: MtuDelegate = new MtuDelegate()
+    private ongoingTransactions: Map<string, boolean> = new Map(); //TODO pass to delegates
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
+    }
+
+    setNotificationPublisher(publisher: (transactionId: string, characteristic: TransferCharacteristic | null, error?: SimulatedBleError) => void) {
+        this.characteristicsDelegate.setNotificationPublisher(publisher)
     }
 
     setAdapterState(adapterState: AdapterState) {
@@ -84,7 +89,7 @@ export class SimulationManager {
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
         return this.discoveryDelegate.discovery(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier)
     }
-    
+
     async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristic(
             this.adapterStateDelegate.getAdapterState(),
@@ -114,5 +119,21 @@ export class SimulationManager {
     
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
         return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
+    }
+
+    monitorCharacteristic(characteristicId: number, transactionId: string): void {
+        this.characteristicsDelegate.monitorCharacteristic(this.adapterStateDelegate.getAdapterState(),
+            this.peripherals, characteristicId, transactionId);
+    }
+
+    monitorCharacteristicForService(serviceId: number, characteristicUuid: UUID, transactionId: string): void {
+        this.characteristicsDelegate.monitorCharacteristicForService(this.adapterStateDelegate.getAdapterState(),
+            this.peripherals, serviceId, characteristicUuid, transactionId)
+    }
+
+    monitorCharacteristicForDevice(peripheralId: string,
+        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string): void {
+        this.characteristicsDelegate.monitorCharacteristicForDevice(this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, transactionId)
     }
 }
