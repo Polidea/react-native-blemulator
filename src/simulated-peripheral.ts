@@ -100,7 +100,6 @@ export class SimulatedPeripheral {
     }
 
     async onRequestMtu(requestedMtu: number ): Promise<number> {
-        console.debug("on request mtu in peripheral", requestedMtu)
         if (Platform.OS === "android") {
             this.mtu = this.negotiateMtu(requestedMtu);
         }
