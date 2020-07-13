@@ -118,7 +118,13 @@ export function errorIfNotReadable(characteristic: SimulatedCharacteristic): voi
 }
 
 export function errorIfDiscoveryNotDone(peripheral: SimulatedPeripheral): void {
-    //TODO
+    if (!peripheral.isDiscoveryDone()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicsNotDiscovered,
+            message: 'Discovery not done'
+        })
+        throw error
+    }
 }
 
 export function errorIfCharacteristicNotFound(characteristic?: SimulatedCharacteristic): void {
