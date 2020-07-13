@@ -137,7 +137,7 @@ public class SimulatedAdapter implements BleAdapter {
         OnSuccessCallback<Integer> modifiedOnSuccessCallback = new OnSuccessCallback<Integer>() {
             @Override
             public void onSuccess(Integer mtu) {
-                Device device = peripherals.get(deviceIdentifier);
+                Device device = deviceManager.getDeviceContainer(deviceIdentifier).getDevice();
                 device.setMtu(mtu);
                 onSuccessCallback.onSuccess(device);
             }
