@@ -207,6 +207,31 @@ public class PlatformToJsBridge {
         );
     }
 
+
+    public void requestMtu(final String deviceIdentifier,
+                           final int mtu,
+                           final OnSuccessCallback<Integer> onSuccessCallback,
+                           final OnErrorCallback onErrorCallback) {
+
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putInt(JsArgumentName.MTU, mtu);
+        callMethod(
+                MethodName.REQUEST_MTU,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(args.getInt(NativeArgumentName.VALUE));
+                        }
+                    }
+                }
+        );
+    }
+
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {
         WritableMap params = Arguments.createMap();
         String callbackId = callHandler.addCallback(callback);

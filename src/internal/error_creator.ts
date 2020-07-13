@@ -73,6 +73,14 @@ export function errorIfDisconnected(peripheralsById: Map<string, SimulatedPeriph
             errorCode: BleErrorCode.DeviceDisconnected,
             message: `Peripheral with identifier ${peripheralIdentifier} has disconnected`
         })
+    }
+}
+
+export function errorIfMtuNegotiated(peripheralsById: Map<string, SimulatedPeripheral>, peripheralIdentifier: string): void {
+    if (peripheralsById.get(peripheralIdentifier)?.isMtuNegotiated()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceMTUChangeFailed,
+            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`})
         throw error
     }
 }
