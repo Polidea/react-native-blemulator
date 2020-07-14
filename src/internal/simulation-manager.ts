@@ -9,6 +9,7 @@ import { SimulatedService } from '../simulated-service'
 import { DiscoveryDelegate } from './delegates/discovery-delegate'
 import { CharacteristicsDelegate } from './delegates/characteristics-delegate'
 import { TransferCharacteristic } from './internal-types'
+import { MtuDelegate } from './delegates/mtu-delegate'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
 
@@ -20,6 +21,7 @@ export class SimulationManager {
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate()
+    private mtuDelegate: MtuDelegate = new MtuDelegate()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
@@ -57,9 +59,9 @@ export class SimulationManager {
         return this.scanDelegate.stopScan()
     }
 
-    async connect(peripheralIdentifier: string): Promise<SimulatedBleError | undefined> {
+    async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | undefined> {
         return this.connectionDelegate.connect(this.adapterStateDelegate.getAdapterState(),
-            this.peripheralsById, peripheralIdentifier)
+            this.peripheralsById, peripheralIdentifier, requestMtu)
     }
 
     async disconnect(peripheralIdentifier: string): Promise<SimulatedBleError | undefined> {
@@ -108,5 +110,9 @@ export class SimulationManager {
             serviceUuid,
             characteristicUuid
         )
+    }
+    
+    async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
+        return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
     }
 }

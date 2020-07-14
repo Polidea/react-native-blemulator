@@ -14,6 +14,8 @@ public interface MethodName {
     String CANCEL_CONNECTION_OR_DISCONNECT = "disconnect";
     String IS_DEVICE_CONNECTED = "isDeviceConnected";
 
+    String REQUEST_MTU = "requestMtu";
+
     String DISCOVERY = "discovery";
 
     String READ_CHARACTERISTIC = "readCharacteristic";

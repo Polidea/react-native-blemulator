@@ -136,3 +136,12 @@ export function errorIfCharacteristicNotFound(characteristic?: SimulatedCharacte
         throw error
     }
 }
+
+export function errorIfMtuNegotiated(peripheralsById: Map<string, SimulatedPeripheral>, peripheralIdentifier: string): void {
+    if (peripheralsById.get(peripheralIdentifier)?.isMtuNegotiated()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceMTUChangeFailed,
+            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`})
+        throw error
+    }
+}

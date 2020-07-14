@@ -26,20 +26,22 @@ interface MethodCallArguments {
 }
 
 enum MethodName {
-    START_SCAN = "startScan",
-    STOP_SCAN = "stopScan",
-    CONNECT = "connect",
-    DISCONNECT = "disconnect",
-    IS_DEVICE_CONNECTED = "isDeviceConnected",
     CREATE_CLIENT = "createClient",
     DESTROY_CLIENT = "destroyClient",
     ENABLE = "enable",
     DISABLE = "disable",
     GET_CURRENT_STATE = "getCurrentState",
+    START_SCAN = "startScan",
+    STOP_SCAN = "stopScan",
+    CONNECT = "connect",
+    DISCONNECT = "disconnect",
+    IS_DEVICE_CONNECTED = "isDeviceConnected",
+    REQUEST_MTU = "requestMtu",
     DISCOVERY = "discovery",
     READ_CHARACTERISTIC = "readCharacteristic",
     READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
-    READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice"
+    READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice",
+    
 }
 
 export class Bridge {
@@ -94,7 +96,7 @@ export class Bridge {
                                 identifier: string, isAutoConnect?: boolean, requestMtu?: number, refreshGatt?: boolean, timeout?: number
                             }
                         }
-                        error = await this.manager.connect(connectArgs.arguments.identifier)
+                        error = await this.manager.connect(connectArgs.arguments.identifier, connectArgs.arguments.requestMtu)
                         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
                         break
                     case MethodName.DISCONNECT:
@@ -122,6 +124,17 @@ export class Bridge {
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
                         }
+                    case MethodName.REQUEST_MTU:
+                        let mtuResult: SimulatedBleError | number
+                        const requestMtuArgs = args as MethodCallArguments & { arguments: { identifier: string, mtu: number } }
+                        mtuResult = await this.manager.requestMtu(requestMtuArgs.arguments.identifier, requestMtuArgs.arguments.mtu)
+                        let data: { error?: SimulatedBleError, value?: number }
+                        if (mtuResult instanceof SimulatedBleError) {
+                            data = { error: mtuResult }
+                        } else {
+                            data = { value: mtuResult }    
+                        }
+                        blemulatorModule.handleReturnCall(args.callbackId, data)
                         break
                     case MethodName.READ_CHARACTERISTIC:
                         const readCharacteristicArgs = args as MethodCallArguments & { arguments: { characteristicId: number, transactionId: string } }

@@ -4,8 +4,8 @@ import { SimulatedCharacteristic } from "./simulated-characteristic";
 import { SimulatedDescriptor } from "./simulated-descriptor";
 import { ScanResult } from "./scan-result";
 import { IdGenerator } from "./internal/utils";
-
-const DEFAULT_MTU = 23
+import { Platform } from 'react-native';
+import { DEFAULT_MTU, MIN_MTU, MAX_MTU } from "./internal/delegates/mtu-delegate"
 
 export interface ScanInfo {
     rssi: number
@@ -34,6 +34,7 @@ export class SimulatedPeripheral {
     private _isConnected: boolean = false
     private _isDiscoveryDone: boolean = false
     private connectionStateListeners: Map<number, ConnectionStateListener> = new Map()
+    private _isMtuNegotiated: boolean = false
 
     constructor({
         name, id, advertisementInterval, services, rssi = -30, txPowerLevel, isConnectable = true,
@@ -90,11 +91,31 @@ export class SimulatedPeripheral {
         if (args?.emit) {
             this.onConnectionStateChanged(ConnectionState.DISCONNECTED)
         }
+        this.mtu = DEFAULT_MTU
+        this._isMtuNegotiated = false
     }
 
     async onDiscovery(): Promise<void> {
         this._isDiscoveryDone = true
     }
+
+    async onRequestMtu(requestedMtu: number ): Promise<number> {
+        if (Platform.OS === "android") {
+            this.mtu = this.negotiateMtu(requestedMtu);
+        }
+        this._isMtuNegotiated = true
+        return this.mtu;
+    }
+
+    getMtu(): number {
+        return this.mtu
+    }
+
+    private negotiateMtu(requestedMtu: number): number {
+        let negotiatedMtu: number = Math.max(MIN_MTU, requestedMtu);
+        negotiatedMtu = Math.min(MAX_MTU, negotiatedMtu);
+        return negotiatedMtu;
+      }
 
     listenToConnectionStateChanges(listener: ConnectionStateListener): Subscription {
         let id = IdGenerator.nextId()
@@ -118,6 +139,10 @@ export class SimulatedPeripheral {
 
     getServices(): Array<SimulatedService> {
         return Array.from(this.servicesByUuid.values())
+    }
+
+    isMtuNegotiated(): boolean {
+        return this._isMtuNegotiated
     }
 
     getService(id: number): SimulatedService | undefined {
