@@ -1,7 +1,7 @@
 import { Base64, AdapterState, UUID } from "../../types";
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfPeripheralNotFound, errorIfPeripheralNotConnected, errorIfNotReadable, errorIfDiscoveryNotDone, errorIfPeripheralDisconnected, errorIfCharacteristicNotFound } from "../error_creator";
+import { errorIfPeripheralNotFound, errorIfPeripheralNotConnected, errorIfNotReadable, errorIfDiscoveryNotDone, errorIfPeripheralDisconnected, errorIfCharacteristicNotFound, errorIfBluetoothNotSupported, errorIfBluetoothNotOn } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
 
@@ -18,6 +18,8 @@ export class CharacteristicsDelegate {
                 }
             }
 
+            errorIfBluetoothNotSupported(adapterState)
+            errorIfBluetoothNotOn(adapterState)
             errorIfPeripheralNotFound(matchedPeripheral)
             errorIfPeripheralNotConnected(matchedPeripheral!)
             errorIfDiscoveryNotDone(matchedPeripheral!)
@@ -51,6 +53,8 @@ export class CharacteristicsDelegate {
                 }
             }
 
+            errorIfBluetoothNotSupported(adapterState)
+            errorIfBluetoothNotOn(adapterState)
             errorIfPeripheralNotFound(matchedPeripheral)
             errorIfPeripheralNotConnected(matchedPeripheral!)
             errorIfDiscoveryNotDone(matchedPeripheral!)
@@ -82,6 +86,8 @@ export class CharacteristicsDelegate {
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralIdentifier)
 
+            errorIfBluetoothNotSupported(adapterState)
+            errorIfBluetoothNotOn(adapterState)
             errorIfPeripheralNotFound(matchedPeripheral)
             errorIfPeripheralNotConnected(matchedPeripheral!)
             errorIfDiscoveryNotDone(matchedPeripheral!)
