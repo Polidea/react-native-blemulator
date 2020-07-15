@@ -36,15 +36,16 @@ public class GattParser {
         clientConfigDescriptor.setValue(serializedCharacteristic.getBoolean(NativeArgumentName.IS_NOTIFYING) ? new byte[]{0x01} : new byte[]{0x00});
         btCharacteristic.addDescriptor(clientConfigDescriptor);
 
-        if (service == null) {
+        Service resolvedService = service;
+        if (resolvedService == null) {
             int serviceId = serializedCharacteristic.getInt(NativeArgumentName.SERVICE_ID);
             String serviceUuid = serializedCharacteristic.getString(NativeArgumentName.SERVICE_UUID);
             BluetoothGattService btService = new BluetoothGattService(UUID.fromString(serviceUuid), BluetoothGattService.SERVICE_TYPE_PRIMARY);
             String deviceId = serializedCharacteristic.getString(NativeArgumentName.DEVICE_ID);
-            service = new Service(serviceId, deviceId, btService);
+            resolvedService = new Service(serviceId, deviceId, btService);
         }
 
-        Characteristic characteristic = new Characteristic(id, service, btCharacteristic);
+        Characteristic characteristic = new Characteristic(id, resolvedService, btCharacteristic);
         String valueBase64 = serializedCharacteristic.getString(NativeArgumentName.VALUE);
         if (valueBase64 != null) {
             characteristic.setValue(Base64.decode(valueBase64, 0));

@@ -244,16 +244,7 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_CHARACTERISTIC_FOR_DEVICE, arguments, new JsCallHandler.Callback() {
-            @Override
-            public void invoke(ReadableMap args) {
-                if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
-                } else {
-                    onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
-                }
-            }
-        });
+        callMethod(MethodName.READ_CHARACTERISTIC_FOR_DEVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
     }
 
     public void readCharacteristicForService(int serviceIdentifier,
@@ -266,16 +257,7 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_CHARACTERISTIC_FOR_SERVICE, arguments, new JsCallHandler.Callback() {
-            @Override
-            public void invoke(ReadableMap args) {
-                if (args.hasKey(NativeArgumentName.ERROR)) {
-                    onErrorCallback.onError(parseError(args.getMap(NativeArgumentName.ERROR)));
-                } else {
-                    onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
-                }
-            }
-        });
+        callMethod(MethodName.READ_CHARACTERISTIC_FOR_SERVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
     }
 
     public void readCharacteristic(int characteristicIdentifier,
@@ -286,7 +268,12 @@ public class PlatformToJsBridge {
         arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_CHARACTERISTIC, arguments, new JsCallHandler.Callback() {
+        callMethod(MethodName.READ_CHARACTERISTIC, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+    }
+
+    private JsCallHandler.Callback createCallbackReturningCharacteristicOrError(
+            final OnSuccessCallback<Characteristic> onSuccessCallback, final OnErrorCallback onErrorCallback) {
+        return new JsCallHandler.Callback() {
             @Override
             public void invoke(ReadableMap args) {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
@@ -295,11 +282,8 @@ public class PlatformToJsBridge {
                     onSuccessCallback.onSuccess(gattParser.parseCharacteristic(args.getMap(NativeArgumentName.VALUE), null).getCharacteristic());
                 }
             }
-        });
+        };
     }
-
-
-
 
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {
         WritableMap params = Arguments.createMap();
