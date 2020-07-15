@@ -7,6 +7,8 @@ import { ScanDelegate } from './delegates/scan-delegate'
 import { AdapterStateDelegate, AdapterStateChangeListener } from './delegates/adapter-state-delegate'
 import { SimulatedService } from '../simulated-service'
 import { DiscoveryDelegate } from './delegates/discovery-delegate'
+import { CharacteristicsDelegate } from './delegates/characteristics-delegate'
+import { TransferCharacteristic } from './internal-types'
 import { MtuDelegate } from './delegates/mtu-delegate'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
@@ -18,6 +20,7 @@ export class SimulationManager {
     private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
+    private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate()
     private mtuDelegate: MtuDelegate = new MtuDelegate()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
@@ -80,6 +83,33 @@ export class SimulationManager {
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
         return this.discoveryDelegate.discovery(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier)
+    }
+    
+    async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.readCharacteristic(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripherals,
+            characteristicId
+        )
+    }
+
+    async readCharacteristicForService(serviceId: number, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.readCharacteristicForService(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripherals,
+            serviceId,
+            characteristicUuid
+        )
+    }
+
+    async readCharacteristicForDevice(peripheralId: string, serviceUuid: UUID, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.readCharacteristicForDevice(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById,
+            peripheralId,
+            serviceUuid,
+            characteristicUuid
+        )
     }
     
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {

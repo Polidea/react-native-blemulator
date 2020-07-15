@@ -3,6 +3,7 @@ package com.polidea.blemulator.parser;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.util.Base64;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
@@ -19,7 +20,46 @@ import java.util.UUID;
 
 import static com.polidea.multiplatformbleadapter.utils.Constants.CLIENT_CHARACTERISTIC_CONFIG_UUID;
 
-public class DiscoveryResponseParser {
+public class GattParser {
+    public CachedCharacteristic parseCharacteristic(ReadableMap serializedCharacteristic, Service service) {
+        String uuid = serializedCharacteristic.getString(NativeArgumentName.UUID);
+        int id = serializedCharacteristic.getInt(NativeArgumentName.ID);
+        int properties = 0;
+        properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_READABLE) ? BluetoothGattCharacteristic.PROPERTY_READ : 0;
+        properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_WRITABLE_WITH_RESPONSE) ? BluetoothGattCharacteristic.PROPERTY_WRITE : 0;
+        properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_WRITABLE_WITHOUT_RESPONSE) ? BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE : 0;
+        properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_NOTIFIABLE) ? BluetoothGattCharacteristic.PROPERTY_NOTIFY : 0;
+        properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_INDICATABLE) ? BluetoothGattCharacteristic.PROPERTY_INDICATE : 0;
+
+        BluetoothGattCharacteristic btCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(uuid), properties, 0);
+        BluetoothGattDescriptor clientConfigDescriptor = new BluetoothGattDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID, 0);
+        clientConfigDescriptor.setValue(serializedCharacteristic.getBoolean(NativeArgumentName.IS_NOTIFYING) ? new byte[]{0x01} : new byte[]{0x00});
+        btCharacteristic.addDescriptor(clientConfigDescriptor);
+
+        Service resolvedService = service;
+        if (resolvedService == null) {
+            int serviceId = serializedCharacteristic.getInt(NativeArgumentName.SERVICE_ID);
+            String serviceUuid = serializedCharacteristic.getString(NativeArgumentName.SERVICE_UUID);
+            BluetoothGattService btService = new BluetoothGattService(UUID.fromString(serviceUuid), BluetoothGattService.SERVICE_TYPE_PRIMARY);
+            String deviceId = serializedCharacteristic.getString(NativeArgumentName.DEVICE_ID);
+            resolvedService = new Service(serviceId, deviceId, btService);
+        }
+
+        Characteristic characteristic = new Characteristic(id, resolvedService, btCharacteristic);
+        String valueBase64 = serializedCharacteristic.getString(NativeArgumentName.VALUE);
+        if (valueBase64 != null) {
+            characteristic.setValue(Base64.decode(valueBase64, 0));
+        }
+        CachedCharacteristic cachedCharacteristic = new CachedCharacteristic(characteristic);
+
+        List<Descriptor> descriptors = parseDescriptors(serializedCharacteristic.getArray(NativeArgumentName.DESCRIPTORS));
+        for (Descriptor descriptor : descriptors) {
+            cachedCharacteristic.addDescriptor(descriptor);
+        }
+
+        return cachedCharacteristic;
+    }
+
     public List<CachedService> parseDiscoveryResponse(ReadableArray response) {
         ArrayList<CachedService> result = new ArrayList<>();
 
@@ -50,28 +90,7 @@ public class DiscoveryResponseParser {
 
         for (int i = 0; i < response.size(); i++) {
             ReadableMap serializedCharacteristic = response.getMap(i);
-            String uuid = serializedCharacteristic.getString(NativeArgumentName.UUID);
-            int id = serializedCharacteristic.getInt(NativeArgumentName.ID);
-            int properties = 0;
-            properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_READABLE) ? BluetoothGattCharacteristic.PROPERTY_READ : 0;
-            properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_WRITABLE_WITH_RESPONSE) ? BluetoothGattCharacteristic.PROPERTY_WRITE : 0;
-            properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_WRITABLE_WITHOUT_RESPONSE) ? BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE : 0;
-            properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_NOTIFIABLE) ? BluetoothGattCharacteristic.PROPERTY_NOTIFY : 0;
-            properties |= serializedCharacteristic.getBoolean(NativeArgumentName.IS_INDICATABLE) ? BluetoothGattCharacteristic.PROPERTY_INDICATE : 0;
-
-            BluetoothGattCharacteristic btCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(uuid), properties, 0);
-            BluetoothGattDescriptor clientConfigDescriptor = new BluetoothGattDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID, 0);
-            clientConfigDescriptor.setValue(serializedCharacteristic.getBoolean(NativeArgumentName.IS_NOTIFYING) ? new byte[]{0x01} : new byte[]{0x00});
-            btCharacteristic.addDescriptor(clientConfigDescriptor);
-
-            Characteristic characteristic = new Characteristic(id, service, btCharacteristic);
-            CachedCharacteristic cachedCharacteristic = new CachedCharacteristic(characteristic);
-
-            List<Descriptor> descriptors = parseDescriptors(serializedCharacteristic.getArray(NativeArgumentName.DESCRIPTORS));
-            for (Descriptor descriptor : descriptors) {
-                cachedCharacteristic.addDescriptor(descriptor);
-            }
-
+            CachedCharacteristic cachedCharacteristic = parseCharacteristic(serializedCharacteristic, service);
             result.add(cachedCharacteristic);
         }
 

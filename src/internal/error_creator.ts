@@ -1,6 +1,7 @@
 import { SimulatedPeripheral } from "../simulated-peripheral";
 import { SimulatedBleError, BleErrorCode } from "../ble-error";
 import { AdapterState } from "../types";
+import { SimulatedCharacteristic } from "../simulated-characteristic";
 
 export function errorIfScanInProgress(isScanInProgress: boolean): void {
     if (isScanInProgress) {
@@ -76,11 +77,80 @@ export function errorIfDisconnected(peripheralsById: Map<string, SimulatedPeriph
     }
 }
 
+export function errorIfPeripheralNotFound(peripheral: SimulatedPeripheral | null | undefined): void {
+    if (!peripheral) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceNotFound,
+            message: `Peripheral not found`
+        })
+        throw error
+    }
+}
+
+export function errorIfPeripheralNotConnected(peripheral: SimulatedPeripheral): void {
+    if (!peripheral.isConnected()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceNotConnected,
+            message: `Peripheral with identifier ${peripheral.id} is not connected`
+        })
+        throw error
+    }
+}
+
+export function errorIfPeripheralDisconnected(peripheral: SimulatedPeripheral): void {
+    if (!peripheral.isConnected()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DeviceDisconnected,
+            message: `Peripheral with identifier ${peripheral.id} has disconnected`
+        })
+        throw error
+    }
+}
+
+export function errorIfNotReadable(characteristic: SimulatedCharacteristic): void {
+    if (!characteristic.isReadable) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicReadFailed,
+            message: `Characteristic (id: ${characteristic.id}, uuid: ${characteristic.uuid}) is not readable`
+        })
+        throw error
+    }
+}
+
+export function errorIfDiscoveryNotDone(peripheral: SimulatedPeripheral): void {
+    if (!peripheral.isDiscoveryDone()) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicsNotDiscovered,
+            message: 'Discovery not done'
+        })
+        throw error
+    }
+}
+
+export function errorIfCharacteristicNotFound(characteristic?: SimulatedCharacteristic): void {
+    if (!characteristic) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicNotFound,
+            message: `Characteristic not found`
+        })
+        throw error
+    }
+}
+
 export function errorIfMtuNegotiated(peripheralsById: Map<string, SimulatedPeripheral>, peripheralIdentifier: string): void {
     if (peripheralsById.get(peripheralIdentifier)?.isMtuNegotiated()) {
         const error: SimulatedBleError = new SimulatedBleError({
             errorCode: BleErrorCode.DeviceMTUChangeFailed,
-            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`})
+            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`
+        })
         throw error
     }
+}
+
+export function errorChecksForAccessToGatt(adapterState: AdapterState, peripheral: SimulatedPeripheral | null | undefined) {
+    errorIfBluetoothNotSupported(adapterState)
+    errorIfBluetoothNotOn(adapterState)
+    errorIfPeripheralNotFound(peripheral)
+    errorIfPeripheralNotConnected(peripheral!)
+    errorIfDiscoveryNotDone(peripheral!)
 }
