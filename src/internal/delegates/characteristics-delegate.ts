@@ -1,36 +1,22 @@
 import { Base64, AdapterState, UUID } from "../../types";
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfPeripheralNotFound, errorIfPeripheralNotConnected, errorIfNotReadable, errorIfDiscoveryNotDone, errorIfPeripheralDisconnected, errorIfCharacteristicNotFound, errorIfBluetoothNotSupported, errorIfBluetoothNotOn } from "../error_creator";
+import { errorIfNotReadable, errorIfPeripheralDisconnected, errorIfCharacteristicNotFound, errorChecksForAccessToGatt } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
+import { findPeripheralWithService, findPeripheralWithCharacteristic } from "../utils";
 
 export class CharacteristicsDelegate {
     async readCharacteristic(adapterState: AdapterState,
         peripherals: Array<SimulatedPeripheral>,
         characteristicIdentifier: number): Promise<TransferCharacteristic | SimulatedBleError> {
         try {
-            let matchedPeripheral: SimulatedPeripheral | null = null
-            for (let i = 0; i < peripherals.length; i++) {
-                if (peripherals[i].getCharacteristic(characteristicIdentifier) != null) {
-                    matchedPeripheral = peripherals[i];
-                    break
-                }
-            }
+            let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
 
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
-            errorIfPeripheralNotFound(matchedPeripheral)
-            errorIfPeripheralNotConnected(matchedPeripheral!)
-            errorIfDiscoveryNotDone(matchedPeripheral!)
+            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic = matchedPeripheral!.getCharacteristic(characteristicIdentifier)!
-            errorIfNotReadable(characteristic)
-            const value: Base64 = await characteristic.read()
-
-            errorIfPeripheralDisconnected(matchedPeripheral!)
-            const returnedCharacteristic: TransferCharacteristic = mapToTransferCharacteristic(characteristic, matchedPeripheral!.id, value)
-            return returnedCharacteristic
+            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(characteristic!, matchedPeripheral!)
         } catch (error) {
             if (error instanceof SimulatedBleError) {
                 return error
@@ -45,30 +31,15 @@ export class CharacteristicsDelegate {
         serviceIdentifier: number,
         characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
         try {
-            let matchedPeripheral: SimulatedPeripheral | null = null
-            for (let i = 0; i < peripherals.length; i++) {
-                if (peripherals[i].getService(serviceIdentifier) != null) {
-                    matchedPeripheral = peripherals[i];
-                    break
-                }
-            }
+            let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithService(peripherals, serviceIdentifier)
 
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
-            errorIfPeripheralNotFound(matchedPeripheral)
-            errorIfPeripheralNotConnected(matchedPeripheral!)
-            errorIfDiscoveryNotDone(matchedPeripheral!)
+            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic | undefined =
                 matchedPeripheral!.getService(serviceIdentifier)?.getCharacteristicByUuid(characteristicUuid)
-
             errorIfCharacteristicNotFound(characteristic)
-            errorIfNotReadable(characteristic!)
-            const value: Base64 = await characteristic!.read()
 
-            errorIfPeripheralDisconnected(matchedPeripheral!)
-            const returnedCharacteristic: TransferCharacteristic = mapToTransferCharacteristic(characteristic!, matchedPeripheral!.id, value)
-            return returnedCharacteristic
+            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(characteristic!, matchedPeripheral!)
         } catch (error) {
             if (error instanceof SimulatedBleError) {
                 return error
@@ -86,20 +57,13 @@ export class CharacteristicsDelegate {
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralIdentifier)
 
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
-            errorIfPeripheralNotFound(matchedPeripheral)
-            errorIfPeripheralNotConnected(matchedPeripheral!)
-            errorIfDiscoveryNotDone(matchedPeripheral!)
+            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
 
-            let characteristic: SimulatedCharacteristic | undefined = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
+            let characteristic: SimulatedCharacteristic | undefined
+                = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
             errorIfCharacteristicNotFound(characteristic)
-            errorIfNotReadable(characteristic!)
-            const value: Base64 = await characteristic!.read()
 
-            errorIfPeripheralDisconnected(matchedPeripheral!)
-            const returnedCharacteristic: TransferCharacteristic = mapToTransferCharacteristic(characteristic!, matchedPeripheral!.id, value)
-            return returnedCharacteristic
+            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(characteristic!, matchedPeripheral!)
         } catch (error) {
             if (error instanceof SimulatedBleError) {
                 return error
@@ -107,5 +71,16 @@ export class CharacteristicsDelegate {
                 return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
             }
         }
+    }
+
+    private async readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(characteristic: SimulatedCharacteristic,
+        peripheral: SimulatedPeripheral): Promise<TransferCharacteristic> {
+
+        errorIfNotReadable(characteristic!)
+        const value: Base64 = await characteristic!.read()
+
+        errorIfPeripheralDisconnected(peripheral)
+        const returnedCharacteristic: TransferCharacteristic = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
+        return returnedCharacteristic
     }
 }

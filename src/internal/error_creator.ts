@@ -141,7 +141,16 @@ export function errorIfMtuNegotiated(peripheralsById: Map<string, SimulatedPerip
     if (peripheralsById.get(peripheralIdentifier)?.isMtuNegotiated()) {
         const error: SimulatedBleError = new SimulatedBleError({
             errorCode: BleErrorCode.DeviceMTUChangeFailed,
-            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`})
+            message: `MTU hase been already negotiated for pripheral ${peripheralIdentifier}`
+        })
         throw error
     }
+}
+
+export function errorChecksForAccessToGatt(adapterState: AdapterState, peripheral: SimulatedPeripheral | null | undefined) {
+    errorIfBluetoothNotSupported(adapterState)
+    errorIfBluetoothNotOn(adapterState)
+    errorIfPeripheralNotFound(peripheral)
+    errorIfPeripheralNotConnected(peripheral!)
+    errorIfDiscoveryNotDone(peripheral!)
 }
