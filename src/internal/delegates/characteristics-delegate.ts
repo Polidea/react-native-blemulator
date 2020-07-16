@@ -178,7 +178,7 @@ export class CharacteristicsDelegate {
             this.notificationPublisher(transactionId, null, new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error }))
         }
 
-        this.notificationSubscriptions.get(transactionId)?.dispose
+        this.notificationSubscriptions.get(transactionId)?.dispose()
         this.notificationSubscriptions.delete(transactionId)
     }
 

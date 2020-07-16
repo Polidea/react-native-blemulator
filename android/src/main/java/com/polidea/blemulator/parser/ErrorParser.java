@@ -15,6 +15,14 @@ public class ErrorParser {
                 break;
             }
         }
-        return new BleError(matchedErrorCode, mappedError.getString(NativeArgumentName.ERROR_MESSAGE), -1);
+
+        BleError error = new BleError(matchedErrorCode, mappedError.getString(NativeArgumentName.ERROR_MESSAGE), -1);
+
+        error.deviceID = mappedError.getString(NativeArgumentName.ERROR_DEVICE_ID);
+        error.serviceUUID = mappedError.getString(NativeArgumentName.ERROR_SERVICE_UUID);
+        error.characteristicUUID = mappedError.getString(NativeArgumentName.ERROR_CHARACTERISTIC_UUID);
+        error.descriptorUUID = mappedError.getString(NativeArgumentName.ERROR_DESCRIPTOR_UUID);
+
+        return error;
     }
 }

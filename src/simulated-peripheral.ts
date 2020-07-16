@@ -85,7 +85,7 @@ export class SimulatedPeripheral {
         this.onConnectionStateChanged(ConnectionState.CONNECTED)
     }
 
-    async onDisconnect(args?: { emit?: boolean } | undefined): Promise<void> {
+    async onDisconnect(args?: { emit?: boolean }): Promise<void> {
         this._isConnected = false
         this._isDiscoveryDone = false
         if (args?.emit) {
@@ -93,6 +93,7 @@ export class SimulatedPeripheral {
         }
         this.mtu = DEFAULT_MTU
         this._isMtuNegotiated = false
+        Array.from(this.characteristicsById.values()).forEach((characteristic) => characteristic.onDisconnect())
     }
 
     async onDiscovery(): Promise<void> {

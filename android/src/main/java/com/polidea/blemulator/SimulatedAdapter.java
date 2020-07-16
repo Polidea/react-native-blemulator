@@ -28,12 +28,13 @@ import java.util.Map;
 
 public class SimulatedAdapter implements BleAdapter {
 
-    private static final String TAG =  SimulatedAdapter.class.getName();
+    private static final String TAG = SimulatedAdapter.class.getName();
     private final BlemulatorModule module;
     private final PlatformToJsBridge bridge;
     private static final int UNUSED_ANDROID_ERROR_CODE = 0;
 
-    private @Constants.BluetoothState String adapterState = Constants.BluetoothState.UNKNOWN;
+    private @Constants.BluetoothState
+    String adapterState = Constants.BluetoothState.UNKNOWN;
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
     private OnEventCallback<ScanResult> scanResultCallback = null;
     private DeviceManager deviceManager = new DeviceManager();
@@ -52,7 +53,7 @@ public class SimulatedAdapter implements BleAdapter {
         deviceManager.addDeviceIfUnknown(scanResult.getDeviceId(), scanResult.getDeviceName());
     }
 
-    public void  publishAdapterState(@Constants.BluetoothState String newState) {
+    public void publishAdapterState(@Constants.BluetoothState String newState) {
         adapterState = newState;
         if (onAdapterStateChangeCallback != null) {
             onAdapterStateChangeCallback.onEvent(newState);
@@ -150,7 +151,7 @@ public class SimulatedAdapter implements BleAdapter {
 
     @Override
     public void requestMTUForDevice(final String deviceIdentifier, int mtu, String transactionId, final OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "requestMTUForDevice called, mtu: "  + mtu);
+        Log.i(TAG, "requestMTUForDevice called, mtu: " + mtu);
         OnSuccessCallback<Integer> modifiedOnSuccessCallback = new OnSuccessCallback<Integer>() {
             @Override
             public void onSuccess(Integer mtu) {
