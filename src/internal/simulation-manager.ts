@@ -27,8 +27,19 @@ export class SimulationManager {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
     }
 
+    setNotificationPublisher(
+        publisher: (
+            transactionId: string,
+            characteristic: TransferCharacteristic | null,
+            error?: SimulatedBleError
+        ) => void
+    ) {
+        this.characteristicsDelegate.setNotificationPublisher(publisher)
+    }
+
     setAdapterState(adapterState: AdapterState) {
         this.adapterStateDelegate.setAdapterState(adapterState)
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
     }
 
     getAdapterState(): AdapterState {
@@ -70,21 +81,32 @@ export class SimulationManager {
     }
 
     async isDeviceConnected(peripheralIdentifier: string): Promise<SimulatedBleError | boolean> {
-        return this.connectionDelegate.isConnected(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier);
+        return this.connectionDelegate.isConnected(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById,
+            peripheralIdentifier
+        );
     }
 
     async enable(): Promise<SimulatedBleError | undefined> {
-        return this.adapterStateDelegate.enable()
+        let result = this.adapterStateDelegate.enable()
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
+        return result;
     }
 
     async disable(): Promise<SimulatedBleError | undefined> {
-        return this.adapterStateDelegate.disable()
+        let result = this.adapterStateDelegate.disable()
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
+        return result
     }
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
-        return this.discoveryDelegate.discovery(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier)
+        return this.discoveryDelegate.discovery(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById, peripheralIdentifier
+        )
     }
-    
+
     async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristic(
             this.adapterStateDelegate.getAdapterState(),
@@ -93,7 +115,9 @@ export class SimulationManager {
         )
     }
 
-    async readCharacteristicForService(serviceId: number, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+    async readCharacteristicForService(serviceId: number,
+        characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForService(
             this.adapterStateDelegate.getAdapterState(),
             this.peripherals,
@@ -102,7 +126,9 @@ export class SimulationManager {
         )
     }
 
-    async readCharacteristicForDevice(peripheralId: string, serviceUuid: UUID, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+    async readCharacteristicForDevice(peripheralId: string,
+        serviceUuid: UUID, characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForDevice(
             this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById,
@@ -111,8 +137,25 @@ export class SimulationManager {
             characteristicUuid
         )
     }
-    
+
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
         return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
+    }
+
+    monitorCharacteristic(characteristicId: number, transactionId: string): void {
+        this.characteristicsDelegate.monitorCharacteristic(this.adapterStateDelegate.getAdapterState(),
+            this.peripherals, characteristicId, transactionId);
+    }
+
+    monitorCharacteristicForService(serviceId: number, characteristicUuid: UUID, transactionId: string): void {
+        this.characteristicsDelegate.monitorCharacteristicForService(this.adapterStateDelegate.getAdapterState(),
+            this.peripherals, serviceId, characteristicUuid, transactionId)
+    }
+
+    monitorCharacteristicForDevice(peripheralId: string,
+        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string
+    ): void {
+        this.characteristicsDelegate.monitorCharacteristicForDevice(this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, transactionId)
     }
 }

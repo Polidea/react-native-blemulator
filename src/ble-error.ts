@@ -48,9 +48,24 @@ export enum BleErrorCode {
 export class SimulatedBleError {
     readonly errorCode: BleErrorCode
     readonly message: string
+    readonly deviceId: string | null
+    readonly serviceUuid: string | null
+    readonly characteristicUuid: string | null
+    readonly descriptorUuid: string | null
 
-    constructor({ errorCode, message }: { errorCode: BleErrorCode, message: string }) {
+    constructor({ errorCode, message, deviceId, serviceUuid, characteristicUuid, descriptorUuid }: {
+        errorCode: BleErrorCode,
+        message: string,
+        deviceId?: string,
+        serviceUuid?: string,
+        characteristicUuid?: string,
+        descriptorUuid?: string
+    }) {
         this.errorCode = errorCode
         this.message = message
+        this.deviceId = deviceId ? deviceId : null
+        this.serviceUuid = serviceUuid ? serviceUuid : null
+        this.characteristicUuid = characteristicUuid ? characteristicUuid : null
+        this.descriptorUuid = descriptorUuid ? descriptorUuid : null
     }
 }

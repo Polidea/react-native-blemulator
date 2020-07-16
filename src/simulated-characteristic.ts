@@ -54,6 +54,10 @@ export class SimulatedCharacteristic {
         this.service = service
     }
 
+    onDisconnect(): void {
+        this.listeners.forEach((extendedListener) => extendedListener.valueListener('trigger'))
+    }
+
     async read(): Promise<Base64> {
         return this.value
     }

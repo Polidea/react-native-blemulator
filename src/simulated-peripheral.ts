@@ -85,7 +85,7 @@ export class SimulatedPeripheral {
         this.onConnectionStateChanged(ConnectionState.CONNECTED)
     }
 
-    async onDisconnect(args?: { emit?: boolean } | undefined): Promise<void> {
+    async onDisconnect(args?: { emit?: boolean }): Promise<void> {
         this._isConnected = false
         this._isDiscoveryDone = false
         if (args?.emit) {
@@ -93,6 +93,7 @@ export class SimulatedPeripheral {
         }
         this.mtu = DEFAULT_MTU
         this._isMtuNegotiated = false
+        this.characteristicsById.forEach((characteristic) => characteristic.onDisconnect())
     }
 
     async onDiscovery(): Promise<void> {
@@ -200,6 +201,6 @@ export class SimulatedPeripheral {
 
     private onConnectionStateChanged(newConnectionState: ConnectionState): void {
         console.log(`P:id "${this.id}"; state: ${newConnectionState}`) //TODO should this somehow be exposed to user? Maybe switched on or off somehow?
-        Array.from(this.connectionStateListeners.values()).forEach((listener) => listener(newConnectionState))
+        this.connectionStateListeners.forEach((listener) => listener(newConnectionState))
     }
 }

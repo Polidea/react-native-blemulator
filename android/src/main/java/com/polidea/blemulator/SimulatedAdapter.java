@@ -19,6 +19,7 @@ import com.polidea.multiplatformbleadapter.ScanResult;
 import com.polidea.multiplatformbleadapter.Service;
 import com.polidea.multiplatformbleadapter.errors.BleError;
 import com.polidea.multiplatformbleadapter.errors.BleErrorCode;
+import com.polidea.multiplatformbleadapter.errors.BleErrorUtils;
 import com.polidea.multiplatformbleadapter.utils.Constants;
 
 import java.util.HashMap;
@@ -27,16 +28,18 @@ import java.util.Map;
 
 public class SimulatedAdapter implements BleAdapter {
 
-    private static final String TAG =  SimulatedAdapter.class.getName();
+    private static final String TAG = SimulatedAdapter.class.getName();
     private final BlemulatorModule module;
     private final PlatformToJsBridge bridge;
     private static final int UNUSED_ANDROID_ERROR_CODE = 0;
 
-    private @Constants.BluetoothState String adapterState = Constants.BluetoothState.UNKNOWN;
+    private @Constants.BluetoothState
+    String adapterState = Constants.BluetoothState.UNKNOWN;
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
     private OnEventCallback<ScanResult> scanResultCallback = null;
     private DeviceManager deviceManager = new DeviceManager();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
+    private Map<String, CallbackContainer> monitoringCallbacks = new HashMap<>();
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
         this.module = module;
@@ -50,10 +53,25 @@ public class SimulatedAdapter implements BleAdapter {
         deviceManager.addDeviceIfUnknown(scanResult.getDeviceId(), scanResult.getDeviceName());
     }
 
-    public void  publishAdapterState(@Constants.BluetoothState String newState) {
+    public void publishAdapterState(@Constants.BluetoothState String newState) {
         adapterState = newState;
         if (onAdapterStateChangeCallback != null) {
             onAdapterStateChangeCallback.onEvent(newState);
+        }
+    }
+
+    public void publishNotification(String transactionId, Characteristic characteristic, BleError error) {
+        if (monitoringCallbacks.containsKey(transactionId)) {
+            if (characteristic != null) {
+                monitoringCallbacks.get(transactionId).getOnEventCallback().onEvent(characteristic);
+            } else if (error != null) {
+                monitoringCallbacks.get(transactionId).getOnErrorCallback().onError(error);
+                monitoringCallbacks.remove(transactionId);
+            } else {
+                Log.w(TAG, "publishNotification called without valid arguments");
+            }
+        } else {
+            Log.e(TAG, "Trying to publish unmonitored characteristic");
         }
     }
 
@@ -133,7 +151,7 @@ public class SimulatedAdapter implements BleAdapter {
 
     @Override
     public void requestMTUForDevice(final String deviceIdentifier, int mtu, String transactionId, final OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "requestMTUForDevice called, mtu: "  + mtu);
+        Log.i(TAG, "requestMTUForDevice called, mtu: " + mtu);
         OnSuccessCallback<Integer> modifiedOnSuccessCallback = new OnSuccessCallback<Integer>() {
             @Override
             public void onSuccess(Integer mtu) {
@@ -371,18 +389,44 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void monitorCharacteristicForDevice(String deviceIdentifier, String serviceUUID, String characteristicUUID, String transactionId, OnEventCallback<Characteristic> onEventCallback, OnErrorCallback onErrorCallback) {
+    public void monitorCharacteristicForDevice(String deviceIdentifier,
+                                               String serviceUUID,
+                                               String characteristicUUID,
+                                               String transactionId,
+                                               OnEventCallback<Characteristic> onEventCallback,
+                                               OnErrorCallback onErrorCallback) {
         Log.i(TAG, "monitorCharacteristicForDevice called");
+        handleNewMonitoringTransaction(onEventCallback, onErrorCallback, transactionId);
+        bridge.monitorCharacteristicForDevice(deviceIdentifier, serviceUUID, characteristicUUID, transactionId);
     }
 
     @Override
-    public void monitorCharacteristicForService(int serviceIdentifier, String characteristicUUID, String transactionId, OnEventCallback<Characteristic> onEventCallback, OnErrorCallback onErrorCallback) {
+    public void monitorCharacteristicForService(int serviceIdentifier,
+                                                String characteristicUUID,
+                                                String transactionId,
+                                                OnEventCallback<Characteristic> onEventCallback,
+                                                OnErrorCallback onErrorCallback) {
         Log.i(TAG, "monitorCharacteristicForService called");
+        handleNewMonitoringTransaction(onEventCallback, onErrorCallback, transactionId);
+        bridge.monitorCharacteristicForService(serviceIdentifier, characteristicUUID, transactionId);
     }
 
     @Override
-    public void monitorCharacteristic(int characteristicIdentifier, String transactionId, OnEventCallback<Characteristic> onEventCallback, OnErrorCallback onErrorCallback) {
+    public void monitorCharacteristic(int characteristicIdentifier,
+                                      String transactionId,
+                                      OnEventCallback<Characteristic> onEventCallback,
+                                      OnErrorCallback onErrorCallback) {
         Log.i(TAG, "monitorCharacteristic called");
+        handleNewMonitoringTransaction(onEventCallback, onErrorCallback, transactionId);
+        bridge.monitorCharacteristic(characteristicIdentifier, transactionId);
+    }
+
+    private void handleNewMonitoringTransaction(OnEventCallback<Characteristic> onEventCallback, OnErrorCallback onErrorCallback, String transactionId) {
+        if (monitoringCallbacks.containsKey(transactionId)) {
+            Log.w(TAG, "Monitoring called reusing existing transactionId");
+            monitoringCallbacks.get(transactionId).getOnErrorCallback().onError(BleErrorUtils.cancelled());
+        }
+        monitoringCallbacks.put(transactionId, new CallbackContainer(onEventCallback, onErrorCallback));
     }
 
     @Override

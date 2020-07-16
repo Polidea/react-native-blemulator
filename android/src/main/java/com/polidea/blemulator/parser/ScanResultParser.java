@@ -17,9 +17,9 @@ public class ScanResultParser {
     static final boolean IS_CONNECTABLE_IS_IOS_ONLY = false;
 
     public static ScanResult parse(ReadableMap scanResult) {
-        String id = scanResult.getString("id");
+        String id = scanResult.getString(NativeArgumentName.ID);
         String name = scanResult.hasKey(NativeArgumentName.NAME) ? scanResult.getString(NativeArgumentName.NAME) : null;
-        int rssi = scanResult.getInt("rssi");
+        int rssi = scanResult.getInt(NativeArgumentName.RSSI);
         int mtu = MTU_NOT_AVAILABLE_BEFORE_CONNECTION;
         boolean isConnectable = IS_CONNECTABLE_IS_IOS_ONLY;
         ReadableArray jsOverflowServiceUuids = scanResult.hasKey(NativeArgumentName.OVERFLOW_SERVICE_UUIDS) ?
