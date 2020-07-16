@@ -81,7 +81,11 @@ export class SimulationManager {
     }
 
     async isDeviceConnected(peripheralIdentifier: string): Promise<SimulatedBleError | boolean> {
-        return this.connectionDelegate.isConnected(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier);
+        return this.connectionDelegate.isConnected(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById,
+            peripheralIdentifier
+        );
     }
 
     async enable(): Promise<SimulatedBleError | undefined> {
@@ -97,7 +101,10 @@ export class SimulationManager {
     }
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
-        return this.discoveryDelegate.discovery(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier)
+        return this.discoveryDelegate.discovery(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById, peripheralIdentifier
+        )
     }
 
     async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
@@ -108,7 +115,9 @@ export class SimulationManager {
         )
     }
 
-    async readCharacteristicForService(serviceId: number, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+    async readCharacteristicForService(serviceId: number,
+        characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForService(
             this.adapterStateDelegate.getAdapterState(),
             this.peripherals,
@@ -117,7 +126,9 @@ export class SimulationManager {
         )
     }
 
-    async readCharacteristicForDevice(peripheralId: string, serviceUuid: UUID, characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+    async readCharacteristicForDevice(peripheralId: string,
+        serviceUuid: UUID, characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForDevice(
             this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById,
@@ -142,7 +153,8 @@ export class SimulationManager {
     }
 
     monitorCharacteristicForDevice(peripheralId: string,
-        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string): void {
+        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string
+    ): void {
         this.characteristicsDelegate.monitorCharacteristicForDevice(this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, transactionId)
     }
