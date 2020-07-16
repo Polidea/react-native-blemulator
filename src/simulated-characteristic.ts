@@ -55,7 +55,7 @@ export class SimulatedCharacteristic {
     }
 
     onDisconnect(): void {
-        Array.from(this.listeners.values()).forEach((extendedListener) => extendedListener.valueListener('trigger'))
+        this.listeners.forEach((extendedListener) => extendedListener.valueListener('trigger'))
     }
 
     async read(): Promise<Base64> {

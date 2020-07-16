@@ -13,10 +13,18 @@ import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal
 import { findPeripheralWithService, findPeripheralWithCharacteristic } from "../utils";
 
 export class CharacteristicsDelegate {
-    private notificationPublisher: (transactionId: string, characteristic: TransferCharacteristic | null, error?: SimulatedBleError) => void = () => { }
+    private notificationPublisher: (
+        transactionId: string,
+        characteristic: TransferCharacteristic | null, error?: SimulatedBleError
+    ) => void = () => { }
     private notificationSubscriptions: Map<string, Subscription> = new Map()
 
-    setNotificationPublisher(publisher: (transactionId: string, characteristic: TransferCharacteristic | null, error?: SimulatedBleError) => void) {
+    setNotificationPublisher(
+        publisher: (
+            transactionId: string,
+            characteristic: TransferCharacteristic | null,
+            error?: SimulatedBleError) => void
+    ) {
         this.notificationPublisher = publisher
     }
 
@@ -24,9 +32,25 @@ export class CharacteristicsDelegate {
         this.handlePotentialMonitoringCancellation(transactionId)
     }
 
-    async readCharacteristic(adapterState: AdapterState,
+    onAdapterStateChange(adapterState: AdapterState) {
+        if (adapterState != AdapterState.POWERED_ON) {
+            const error = new SimulatedBleError({
+                errorCode: adapterState === AdapterState.UNSUPPORTED ? BleErrorCode.BluetoothUnsupported : BleErrorCode.BluetoothResetting,
+                message: 'Bluetooth state changed'
+            })
+            this.notificationSubscriptions.forEach((subscription, transactionId) => {
+                this.notificationPublisher(transactionId, null, error)
+                subscription.dispose()
+                this.notificationSubscriptions.delete(transactionId)
+            })
+        }
+    }
+
+    async readCharacteristic(
+        adapterState: AdapterState,
         peripherals: Array<SimulatedPeripheral>,
-        characteristicIdentifier: number): Promise<TransferCharacteristic | SimulatedBleError> {
+        characteristicIdentifier: number
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         try {
             let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
 
@@ -43,10 +67,12 @@ export class CharacteristicsDelegate {
         }
     }
 
-    async readCharacteristicForService(adapterState: AdapterState,
+    async readCharacteristicForService(
+        adapterState: AdapterState,
         peripherals: Array<SimulatedPeripheral>,
         serviceIdentifier: number,
-        characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+        characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         try {
             let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithService(peripherals, serviceIdentifier)
 
@@ -66,11 +92,13 @@ export class CharacteristicsDelegate {
         }
     }
 
-    async readCharacteristicForDevice(adapterState: AdapterState,
+    async readCharacteristicForDevice(
+        adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         serviceUuid: UUID,
-        characteristicUuid: UUID): Promise<TransferCharacteristic | SimulatedBleError> {
+        characteristicUuid: UUID
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralIdentifier)
 
@@ -90,8 +118,10 @@ export class CharacteristicsDelegate {
         }
     }
 
-    private async readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(characteristic: SimulatedCharacteristic,
-        peripheral: SimulatedPeripheral): Promise<TransferCharacteristic> {
+    private async readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+        characteristic: SimulatedCharacteristic,
+        peripheral: SimulatedPeripheral
+    ): Promise<TransferCharacteristic> {
 
         errorIfNotReadable(characteristic!)
         const value: Base64 = await characteristic!.read()
@@ -102,7 +132,8 @@ export class CharacteristicsDelegate {
     }
 
     monitorCharacteristic(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>,
-        characteristicId: number, transactionId: string): void {
+        characteristicId: number, transactionId: string
+    ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithCharacteristic(peripherals, characteristicId)
 
@@ -118,7 +149,8 @@ export class CharacteristicsDelegate {
     }
 
     monitorCharacteristicForService(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>,
-        serviceId: number, characteristicUuid: UUID, transactionId: string): void {
+        serviceId: number, characteristicUuid: UUID, transactionId: string
+    ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | null = findPeripheralWithService(peripherals, serviceId)
 
@@ -136,8 +168,10 @@ export class CharacteristicsDelegate {
         }
     }
 
-    monitorCharacteristicForDevice(adapterState: AdapterState, peripherals: Map<string, SimulatedPeripheral>, peripheralId: string,
-        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string): void {
+    monitorCharacteristicForDevice(adapterState: AdapterState,
+        peripherals: Map<string, SimulatedPeripheral>, peripheralId: string,
+        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string
+    ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
 
@@ -163,7 +197,10 @@ export class CharacteristicsDelegate {
         const subscription: Subscription = characteristic.monitor((newValue) => {
             try {
                 errorIfPeripheralDisconnected(matchedPeripheral!)
-                this.notificationPublisher(transactionId, mapToTransferCharacteristic(characteristic, matchedPeripheral!.id, newValue))
+                this.notificationPublisher(
+                    transactionId,
+                    mapToTransferCharacteristic(characteristic, matchedPeripheral!.id, newValue)
+                )
             } catch (error) {
                 this.handleMonitoringError(transactionId, error)
             }
@@ -175,7 +212,11 @@ export class CharacteristicsDelegate {
         if (error instanceof SimulatedBleError) {
             this.notificationPublisher(transactionId, null, error)
         } else {
-            this.notificationPublisher(transactionId, null, new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error }))
+            this.notificationPublisher(transactionId, null,
+                new SimulatedBleError(
+                    { errorCode: BleErrorCode.UnknownError, message: error }
+                )
+            )
         }
 
         this.notificationSubscriptions.get(transactionId)?.dispose()
@@ -185,7 +226,11 @@ export class CharacteristicsDelegate {
     private handlePotentialMonitoringCancellation(transactionId: string) {
         if (this.notificationSubscriptions.has(transactionId)) {
             this.notificationSubscriptions.get(transactionId)?.dispose()
-            this.notificationPublisher(transactionId, null, new SimulatedBleError({ errorCode: BleErrorCode.OperationCancelled, message: "Transaction replaced" }))
+            this.notificationPublisher(transactionId, null,
+                new SimulatedBleError(
+                    { errorCode: BleErrorCode.OperationCancelled, message: "Transaction replaced" }
+                )
+            )
             this.notificationSubscriptions.delete(transactionId)
         }
     }

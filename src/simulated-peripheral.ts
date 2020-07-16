@@ -93,7 +93,7 @@ export class SimulatedPeripheral {
         }
         this.mtu = DEFAULT_MTU
         this._isMtuNegotiated = false
-        Array.from(this.characteristicsById.values()).forEach((characteristic) => characteristic.onDisconnect())
+        this.characteristicsById.forEach((characteristic) => characteristic.onDisconnect())
     }
 
     async onDiscovery(): Promise<void> {
@@ -201,6 +201,6 @@ export class SimulatedPeripheral {
 
     private onConnectionStateChanged(newConnectionState: ConnectionState): void {
         console.log(`P:id "${this.id}"; state: ${newConnectionState}`) //TODO should this somehow be exposed to user? Maybe switched on or off somehow?
-        Array.from(this.connectionStateListeners.values()).forEach((listener) => listener(newConnectionState))
+        this.connectionStateListeners.forEach((listener) => listener(newConnectionState))
     }
 }

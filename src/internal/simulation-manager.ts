@@ -22,18 +22,24 @@ export class SimulationManager {
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate()
     private mtuDelegate: MtuDelegate = new MtuDelegate()
-    private ongoingTransactions: Map<string, boolean> = new Map(); //TODO pass to delegates
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
     }
 
-    setNotificationPublisher(publisher: (transactionId: string, characteristic: TransferCharacteristic | null, error?: SimulatedBleError) => void) {
+    setNotificationPublisher(
+        publisher: (
+            transactionId: string,
+            characteristic: TransferCharacteristic | null,
+            error?: SimulatedBleError
+        ) => void
+    ) {
         this.characteristicsDelegate.setNotificationPublisher(publisher)
     }
 
     setAdapterState(adapterState: AdapterState) {
         this.adapterStateDelegate.setAdapterState(adapterState)
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
     }
 
     getAdapterState(): AdapterState {
@@ -79,11 +85,15 @@ export class SimulationManager {
     }
 
     async enable(): Promise<SimulatedBleError | undefined> {
-        return this.adapterStateDelegate.enable()
+        let result = this.adapterStateDelegate.enable()
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
+        return result;
     }
 
     async disable(): Promise<SimulatedBleError | undefined> {
-        return this.adapterStateDelegate.disable()
+        let result = this.adapterStateDelegate.disable()
+        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
+        return result
     }
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
@@ -116,7 +126,7 @@ export class SimulationManager {
             characteristicUuid
         )
     }
-    
+
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
         return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
     }

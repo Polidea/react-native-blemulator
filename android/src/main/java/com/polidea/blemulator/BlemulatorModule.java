@@ -98,8 +98,13 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void publishCharacteristicNotification(String transactionId, ReadableMap serializedCharacteristic, ReadableMap serializedError) {
-        Characteristic characteristic = serializedCharacteristic != null ? gattParser.parseCharacteristic(serializedCharacteristic, null).getCharacteristic() : null;
+    public void publishCharacteristicNotification(String transactionId,
+                                                  ReadableMap serializedCharacteristic,
+                                                  ReadableMap serializedError) {
+        Characteristic characteristic =
+                serializedCharacteristic != null
+                        ? gattParser.parseCharacteristic(serializedCharacteristic, null).getCharacteristic()
+                        : null;
         BleError error = serializedError != null ? errorParser.parseError(serializedError) : null;
         adapter.publishNotification(
                 transactionId,
