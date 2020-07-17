@@ -22,6 +22,10 @@ public interface MethodName {
     String READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService";
     String READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice";
 
+    String WRITE_CHARACTERISTIC = "writeCharacteristic";
+    String WRITE_CHARACTERISTIC_FOR_SERVICE = "writeCharacteristicForService";
+    String WRITE_CHARACTERISTIC_FOR_DEVICE = "writeCharacteristicForDevice";
+
     String MONITOR_CHARACTERISTIC = "monitorCharacteristic";
     String MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService";
     String MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice";

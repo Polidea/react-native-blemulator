@@ -173,3 +173,25 @@ export function errorIfNotMonitorable(characteristic: SimulatedCharacteristic): 
         throw error
     }
 }
+
+export function errorIfNotWritableWithResponse(characteristic: SimulatedCharacteristic): void {
+    if (!characteristic.isWritableWithResponse) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicWriteFailed,
+            message: 'Characteristic not writable with response',
+            characteristicUuid: characteristic.uuid,
+        })
+        throw error
+    }
+}
+
+export function errorIfNotWritableWithoutResponse(characteristic: SimulatedCharacteristic): void {
+    if (!characteristic.isWritableWithoutResponse) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.CharacteristicWriteFailed,
+            message: 'Characteristic not writable without response',
+            characteristicUuid: characteristic.uuid,
+        })
+        throw error
+    }
+}

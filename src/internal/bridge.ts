@@ -2,7 +2,7 @@ import { EventSubscriptionVendor, NativeModules, EmitterSubscription, NativeEven
 import { SimulatedBleError } from "../ble-error";
 import { ScanResult } from "../scan-result";
 import { SimulationManager } from "./simulation-manager";
-import { UUID, ConnectionState, AdapterState } from "../types";
+import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
 import { SimulatedService } from "../simulated-service";
 import { TransferCharacteristic, mapToTransferService } from "./internal-types";
 
@@ -40,6 +40,9 @@ enum MethodName {
     READ_CHARACTERISTIC = "readCharacteristic",
     READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
     READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice",
+    WRITE_CHARACTERISTIC = "writeCharacteristic",
+    WRITE_CHARACTERISTIC_FOR_SERVICE = "writeCharacteristicForService",
+    WRITE_CHARACTERISTIC_FOR_DEVICE = "writeCharacteristicForDevice",
     MONITOR_CHARACTERISTIC = "monitorCharacteristic",
     MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService",
     MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice",
@@ -55,8 +58,8 @@ export class Bridge {
         this.blemulatorModule = blemulatorModule
 
         this.setupConnectionStatePublisher()
-        this.manager.setNotificationPublisher((transactionId, characteristic, error) => { 
-            blemulatorModule.publishCharacteristicNotification(transactionId, characteristic, error ? error : null) 
+        this.manager.setNotificationPublisher((transactionId, characteristic, error) => {
+            blemulatorModule.publishCharacteristicNotification(transactionId, characteristic, error ? error : null)
         })
 
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
@@ -136,7 +139,7 @@ export class Bridge {
                         if (mtuResult instanceof SimulatedBleError) {
                             data = { error: mtuResult }
                         } else {
-                            data = { value: mtuResult }    
+                            data = { value: mtuResult }
                         }
                         blemulatorModule.handleReturnCall(args.callbackId, data)
                         break
@@ -174,6 +177,81 @@ export class Bridge {
                             blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicForDeviceResult })
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForDeviceResult })
+                        }
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC:
+                        const writeCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                characteristicId: number,
+                            }
+                        }
+                        const writeCharacteristicResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristic(
+                                writeCharacteristicArgs.arguments.characteristicId,
+                                writeCharacteristicArgs.arguments.value,
+                                writeCharacteristicArgs.arguments.withResponse,
+                                writeCharacteristicArgs.arguments.transactionId
+                            )
+
+                        if (writeCharacteristicResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: writeCharacteristicResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: writeCharacteristicResult })
+                        }
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE:
+                        const writeCharacteristicForServiceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                serviceId: number,
+                                characteristicUuid: UUID,
+                            }
+                        }
+                        const writeCharacteristicForServiceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristicForService(
+                                writeCharacteristicForServiceArgs.arguments.serviceId,
+                                writeCharacteristicForServiceArgs.arguments.characteristicUuid,
+                                writeCharacteristicForServiceArgs.arguments.value,
+                                writeCharacteristicForServiceArgs.arguments.withResponse,
+                                writeCharacteristicForServiceArgs.arguments.transactionId
+                            )
+
+                        if (writeCharacteristicForServiceResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: writeCharacteristicForServiceResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: writeCharacteristicForServiceResult })
+                        }
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE:
+                        const writeCharacteristicForDeviceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                identifier: string,
+                                serviceUuid: UUID,
+                                characteristicUuid: UUID,
+                            }
+                        }
+                        const writeCharacteristicForDeviceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristicForDevice(
+                                writeCharacteristicForDeviceArgs.arguments.identifier,
+                                writeCharacteristicForDeviceArgs.arguments.serviceUuid,
+                                writeCharacteristicForDeviceArgs.arguments.characteristicUuid,
+                                writeCharacteristicForDeviceArgs.arguments.value,
+                                writeCharacteristicForDeviceArgs.arguments.withResponse,
+                                writeCharacteristicForDeviceArgs.arguments.transactionId
+                            )
+
+                        if (writeCharacteristicForDeviceResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: writeCharacteristicForDeviceResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, { value: writeCharacteristicForDeviceResult })
                         }
                         break
                     case MethodName.MONITOR_CHARACTERISTIC:

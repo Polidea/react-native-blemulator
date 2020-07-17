@@ -287,6 +287,60 @@ public class PlatformToJsBridge {
         };
     }
 
+    public void writeCharacteristicForDevice(String deviceIdentifier,
+                                             String serviceUUID,
+                                             String characteristicUUID,
+                                             String valueBase64,
+                                             boolean withResponse,
+                                             String transactionId,
+                                             OnSuccessCallback<Characteristic> onSuccessCallback,
+                                             OnErrorCallback onErrorCallback) {
+        Log.i(TAG, "writeCharacteristicForDevice called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+        arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
+
+        callMethod(MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+    }
+
+    public void writeCharacteristicForService(int serviceIdentifier,
+                                              String characteristicUUID,
+                                              String valueBase64,
+                                              boolean withResponse,
+                                              String transactionId,
+                                              OnSuccessCallback<Characteristic> onSuccessCallback,
+                                              OnErrorCallback onErrorCallback) {
+        Log.i(TAG, "writeCharacteristicForService called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+        arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
+
+        callMethod(MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+    }
+
+    public void writeCharacteristic(int characteristicIdentifier,
+                                    String valueBase64,
+                                    boolean withResponse,
+                                    String transactionId,
+                                    OnSuccessCallback<Characteristic> onSuccessCallback,
+                                    OnErrorCallback onErrorCallback) {
+        Log.i(TAG, "writeCharacteristic called");
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+        arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
+
+        callMethod(MethodName.WRITE_CHARACTERISTIC, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+    }
+
     public void monitorCharacteristicForDevice(String deviceIdentifier,
                                                String serviceUUID,
                                                String characteristicUUID,

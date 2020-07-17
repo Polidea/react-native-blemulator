@@ -1,6 +1,6 @@
 import { ScanResult } from '../scan-result'
 import { SimulatedPeripheral } from '../simulated-peripheral'
-import { UUID, AdapterState, ConnectionState } from '../types'
+import { UUID, AdapterState, ConnectionState, Base64 } from '../types'
 import { SimulatedBleError } from '../ble-error'
 import { ConnectionDelegate } from './delegates/connection-delegate'
 import { ScanDelegate } from './delegates/scan-delegate'
@@ -20,7 +20,7 @@ export class SimulationManager {
     private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
-    private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate()
+    private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState())
     private mtuDelegate: MtuDelegate = new MtuDelegate()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
@@ -100,6 +100,10 @@ export class SimulationManager {
         return result
     }
 
+    async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
+        return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
+    }
+
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
         return this.discoveryDelegate.discovery(
             this.adapterStateDelegate.getAdapterState(),
@@ -138,8 +142,53 @@ export class SimulationManager {
         )
     }
 
-    async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
-        return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
+    async writeCharacteristic(characteristicId: number,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.writeCharacteristic(
+            this.peripherals,
+            characteristicId,
+            value,
+            withResponse,
+            transactionId
+        )
+    }
+
+    async writeCharacteristicForService(serviceId: number,
+        characteristicUuid: UUID,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.writeCharacteristicForService(
+            this.peripherals,
+            serviceId,
+            characteristicUuid,
+            value,
+            withResponse,
+            transactionId
+        )
+    }
+
+    async writeCharacteristicForDevice(
+        peripheralId: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        return this.characteristicsDelegate.writeCharacteristicForDevice(
+            this.peripheralsById,
+            peripheralId,
+            serviceUuid,
+            characteristicUuid,
+            value,
+            withResponse,
+            transactionId
+        )
     }
 
     monitorCharacteristic(characteristicId: number, transactionId: string): void {
