@@ -7,17 +7,26 @@ import {
     errorIfCharacteristicNotFound,
     errorIfNotMonitorable,
     errorChecksForAccessToGatt,
+    errorIfNotWritableWithResponse,
+    errorIfNotWritableWithoutResponse,
+    errorIfBluetoothNotSupported,
+    errorIfBluetoothNotOn,
 } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
 import { findPeripheralWithService, findPeripheralWithCharacteristic } from "../utils";
 
 export class CharacteristicsDelegate {
+    private readonly getAdapterState: () => AdapterState
     private notificationPublisher: (
         transactionId: string,
         characteristic: TransferCharacteristic | null, error?: SimulatedBleError
     ) => void = () => { }
     private notificationSubscriptions: Map<string, Subscription> = new Map()
+
+    constructor(getAdapterState: () => AdapterState) {
+        this.getAdapterState = getAdapterState
+    }
 
     setNotificationPublisher(
         publisher: (
@@ -68,11 +77,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            if (error instanceof SimulatedBleError) {
-                return error
-            } else {
-                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
-            }
+            return this.handleError(error)
         }
     }
 
@@ -97,11 +102,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            if (error instanceof SimulatedBleError) {
-                return error
-            } else {
-                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
-            }
+            return this.handleError(error)
         }
     }
 
@@ -127,11 +128,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            if (error instanceof SimulatedBleError) {
-                return error
-            } else {
-                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
-            }
+            return this.handleError(error)
         }
     }
 
@@ -143,10 +140,120 @@ export class CharacteristicsDelegate {
         errorIfNotReadable(characteristic!)
         const value: Base64 = await characteristic!.read()
 
+        errorIfBluetoothNotSupported(this.getAdapterState())
+        errorIfBluetoothNotOn(this.getAdapterState())
         errorIfPeripheralDisconnected(peripheral)
+
         const returnedCharacteristic: TransferCharacteristic
             = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
         return returnedCharacteristic
+    }
+
+    async writeCharacteristic(peripherals: Array<SimulatedPeripheral>,
+        characteristicIdentifier: number,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        try {
+            let matchedPeripheral: SimulatedPeripheral | null
+                = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
+
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+
+            let characteristic: SimulatedCharacteristic
+                = matchedPeripheral!.getCharacteristic(characteristicIdentifier)!
+
+            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+                characteristic,
+                matchedPeripheral!,
+                value, withResponse,
+                transactionId
+            )
+        } catch (error) {
+            return this.handleError(error)
+        }
+    }
+
+    async writeCharacteristicForService(
+        peripherals: Array<SimulatedPeripheral>,
+        serviceIdentifier: number,
+        characteristicUuid: UUID,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        try {
+            let matchedPeripheral: SimulatedPeripheral | null
+                = findPeripheralWithService(peripherals, serviceIdentifier)
+
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+
+            let characteristic: SimulatedCharacteristic | undefined =
+                matchedPeripheral!.getService(serviceIdentifier)?.getCharacteristicByUuid(characteristicUuid)
+            errorIfCharacteristicNotFound(characteristic)
+
+            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+                characteristic!,
+                matchedPeripheral!,
+                value, withResponse,
+                transactionId
+            )
+        } catch (error) {
+            return this.handleError(error)
+        }
+    }
+
+    async writeCharacteristicForDevice(
+        peripherals: Map<string, SimulatedPeripheral>,
+        peripheralIdentifier: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic | SimulatedBleError> {
+        try {
+            let matchedPeripheral: SimulatedPeripheral | undefined
+                = peripherals.get(peripheralIdentifier)
+
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+
+            let characteristic: SimulatedCharacteristic | undefined
+                = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
+            errorIfCharacteristicNotFound(characteristic)
+
+            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+                characteristic!,
+                matchedPeripheral!,
+                value, withResponse,
+                transactionId
+            )
+        } catch (error) {
+            return this.handleError(error)
+        }
+    }
+
+    private async writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+        characteristic: SimulatedCharacteristic,
+        peripheral: SimulatedPeripheral,
+        value: Base64,
+        withResponse: boolean,
+        transactionId: string
+    ): Promise<TransferCharacteristic> {
+        if (withResponse) {
+            errorIfNotWritableWithResponse(characteristic)
+        } else {
+            errorIfNotWritableWithoutResponse(characteristic)
+        }
+
+        await characteristic.write(value, { withResponse: withResponse, sendNotification: true })
+
+        errorIfBluetoothNotSupported(this.getAdapterState())
+        errorIfBluetoothNotOn(this.getAdapterState())
+        errorIfPeripheralDisconnected(peripheral)
+
+        return mapToTransferCharacteristic(characteristic, peripheral.id, value)
     }
 
     monitorCharacteristic(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>,
@@ -206,6 +313,14 @@ export class CharacteristicsDelegate {
             this.handleSubscription(transactionId, matchedPeripheral!, characteristic!)
         } catch (error) {
             this.handleMonitoringError(transactionId, error)
+        }
+    }
+
+    private handleError(error: any): SimulatedBleError {
+        if (error instanceof SimulatedBleError) {
+            return error
+        } else {
+            return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
         }
     }
 

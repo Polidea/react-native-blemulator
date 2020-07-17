@@ -374,18 +374,63 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void writeCharacteristicForDevice(String deviceIdentifier, String serviceUUID, String characteristicUUID, String valueBase64, boolean withResponse, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void writeCharacteristicForDevice(String deviceIdentifier,
+                                             String serviceUUID,
+                                             String characteristicUUID,
+                                             String valueBase64,
+                                             boolean withResponse,
+                                             String transactionId,
+                                             OnSuccessCallback<Characteristic> onSuccessCallback,
+                                             OnErrorCallback onErrorCallback) {
         Log.i(TAG, "writeCharacteristicForDevice called");
+        bridge.writeCharacteristicForDevice(
+                deviceIdentifier,
+                serviceUUID,
+                characteristicUUID,
+                valueBase64,
+                withResponse,
+                transactionId,
+                onSuccessCallback,
+                onErrorCallback
+        );
     }
 
     @Override
-    public void writeCharacteristicForService(int serviceIdentifier, String characteristicUUID, String valueBase64, boolean withResponse, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void writeCharacteristicForService(int serviceIdentifier,
+                                              String characteristicUUID,
+                                              String valueBase64,
+                                              boolean withResponse,
+                                              String transactionId,
+                                              OnSuccessCallback<Characteristic> onSuccessCallback,
+                                              OnErrorCallback onErrorCallback) {
         Log.i(TAG, "writeCharacteristicForService called");
+        bridge.writeCharacteristicForService(
+                serviceIdentifier,
+                characteristicUUID,
+                valueBase64,
+                withResponse,
+                transactionId,
+                onSuccessCallback,
+                onErrorCallback
+        );
     }
 
     @Override
-    public void writeCharacteristic(int characteristicIdentifier, String valueBase64, boolean withResponse, String transactionId, OnSuccessCallback<Characteristic> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void writeCharacteristic(int characteristicIdentifier,
+                                    String valueBase64,
+                                    boolean withResponse,
+                                    String transactionId,
+                                    OnSuccessCallback<Characteristic> onSuccessCallback,
+                                    OnErrorCallback onErrorCallback) {
         Log.i(TAG, "writeCharacteristic called");
+        bridge.writeCharacteristic(
+                characteristicIdentifier,
+                valueBase64,
+                withResponse,
+                transactionId,
+                onSuccessCallback,
+                onErrorCallback
+        );
     }
 
     @Override

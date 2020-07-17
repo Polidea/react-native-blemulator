@@ -18,4 +18,7 @@ public interface JsArgumentName {
     String SERVICE_UUID = "serviceUuid";
     String CHARACTERISTIC_ID = "characteristicId";
     String CHARACTERISTIC_UUID = "characteristicUuid";
+
+    String VALUE = "value";
+    String WITH_RESPONSE = "withResponse";
 }

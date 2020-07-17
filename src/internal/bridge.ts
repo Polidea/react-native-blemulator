@@ -2,13 +2,13 @@ import { EventSubscriptionVendor, NativeModules, EmitterSubscription, NativeEven
 import { SimulatedBleError } from "../ble-error";
 import { ScanResult } from "../scan-result";
 import { SimulationManager } from "./simulation-manager";
-import { UUID, ConnectionState, AdapterState } from "../types";
+import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
 import { SimulatedService } from "../simulated-service";
 import { TransferCharacteristic, mapToTransferService } from "./internal-types";
 
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
-    handleReturnCall(callbackId: String, returnValue: { value?: Object, error?: SimulatedBleError }): void
+    handleReturnCall(callbackId: string, returnValue: { value?: Object, error?: SimulatedBleError }): void
     addScanResult(scanResult: ScanResult): void
     publishConnectionState(peripheralId: string, connectionState: string): void
     publishAdapterState(state: String): void
@@ -19,8 +19,8 @@ interface BlemulatorModuleInterface {
 const blemulatorModule: BlemulatorModuleInterface & EventSubscriptionVendor = NativeModules.Blemulator;
 
 interface MethodCallArguments {
-    methodName: String
-    callbackId: String
+    methodName: string
+    callbackId: string
     arguments: Object
 }
 
@@ -40,6 +40,9 @@ enum MethodName {
     READ_CHARACTERISTIC = "readCharacteristic",
     READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
     READ_CHARACTERISTIC_FOR_DEVICE = "readCharacteristicForDevice",
+    WRITE_CHARACTERISTIC = "writeCharacteristic",
+    WRITE_CHARACTERISTIC_FOR_SERVICE = "writeCharacteristicForService",
+    WRITE_CHARACTERISTIC_FOR_DEVICE = "writeCharacteristicForDevice",
     MONITOR_CHARACTERISTIC = "monitorCharacteristic",
     MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService",
     MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice",
@@ -55,8 +58,8 @@ export class Bridge {
         this.blemulatorModule = blemulatorModule
 
         this.setupConnectionStatePublisher()
-        this.manager.setNotificationPublisher((transactionId, characteristic, error) => { 
-            blemulatorModule.publishCharacteristicNotification(transactionId, characteristic, error ? error : null) 
+        this.manager.setNotificationPublisher((transactionId, characteristic, error) => {
+            blemulatorModule.publishCharacteristicNotification(transactionId, characteristic, error ? error : null)
         })
 
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
@@ -111,70 +114,119 @@ export class Bridge {
                     case MethodName.DISCOVERY:
                         //TODO handle transactionId (store it in some object in the map to be able to flip it to cancelled)
                         const discoveryArgs = args as MethodCallArguments & { arguments: { identifier: string } }
-                        const result = await this.manager.discovery(discoveryArgs.arguments.identifier)
-                        if (result instanceof SimulatedBleError) {
-                            blemulatorModule.handleReturnCall(args.callbackId, { error: result })
+                        const discoveryResult = await this.manager.discovery(discoveryArgs.arguments.identifier)
+                        if (discoveryResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: discoveryResult })
                         } else {
                             blemulatorModule.handleReturnCall(args.callbackId, {
-                                value: result.map((service: SimulatedService) => mapToTransferService(service, discoveryArgs.arguments.identifier))
+                                value: discoveryResult.map((service: SimulatedService) => mapToTransferService(service, discoveryArgs.arguments.identifier))
                             })
                         }
                         break
                     case MethodName.IS_DEVICE_CONNECTED:
                         const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
                         let isDeviceConnectedResult = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
-                        if (isDeviceConnectedResult instanceof SimulatedBleError) {
-                            blemulatorModule.handleReturnCall(args.callbackId, { error: isDeviceConnectedResult })
-                        } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { value: isDeviceConnectedResult })
-                        }
+                        this.callbackErrorOrValue(args.callbackId, isDeviceConnectedResult)
+                        break
                     case MethodName.REQUEST_MTU:
                         let mtuResult: SimulatedBleError | number
                         const requestMtuArgs = args as MethodCallArguments & { arguments: { identifier: string, mtu: number } }
                         mtuResult = await this.manager.requestMtu(requestMtuArgs.arguments.identifier, requestMtuArgs.arguments.mtu)
-                        let data: { error?: SimulatedBleError, value?: number }
-                        if (mtuResult instanceof SimulatedBleError) {
-                            data = { error: mtuResult }
-                        } else {
-                            data = { value: mtuResult }    
-                        }
-                        blemulatorModule.handleReturnCall(args.callbackId, data)
+                        this.callbackErrorOrValue(args.callbackId, mtuResult)
                         break
                     case MethodName.READ_CHARACTERISTIC:
-                        const readCharacteristicArgs = args as MethodCallArguments & { arguments: { characteristicId: number, transactionId: string } }
-                        const readCharacteristicResult: SimulatedBleError | TransferCharacteristic = await this.manager.readCharacteristic(readCharacteristicArgs.arguments.characteristicId)
-                        if (readCharacteristicResult instanceof SimulatedBleError) {
-                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicResult })
-                        } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicResult })
+                        const readCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: { characteristicId: number, transactionId: string }
                         }
+                        const readCharacteristicResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.readCharacteristic(readCharacteristicArgs.arguments.characteristicId)
+                        this.callbackErrorOrValue(args.callbackId, readCharacteristicResult)
                         break
                     case MethodName.READ_CHARACTERISTIC_FOR_SERVICE:
-                        const readCharacteristicForServiceArgs = args as MethodCallArguments & { arguments: { serviceId: number, characteristicUuid: UUID, transactionId: string } }
+                        const readCharacteristicForServiceArgs = args as MethodCallArguments & {
+                            arguments: { serviceId: number, characteristicUuid: UUID, transactionId: string }
+                        }
                         const readCharacteristicForServiceResult: SimulatedBleError | TransferCharacteristic
                             = await this.manager.readCharacteristicForService(
                                 readCharacteristicForServiceArgs.arguments.serviceId,
                                 readCharacteristicForServiceArgs.arguments.characteristicUuid
                             )
-                        if (readCharacteristicForServiceResult instanceof SimulatedBleError) {
-                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicForServiceResult })
-                        } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForServiceResult })
-                        }
+                        this.callbackErrorOrValue(args.callbackId, readCharacteristicForServiceResult)
                         break
                     case MethodName.READ_CHARACTERISTIC_FOR_DEVICE:
-                        const readCharacteristicForDeviceArgs = args as MethodCallArguments & { arguments: { identifier: string, serviceUuid: UUID, characteristicUuid: UUID, transactionId: string } }
+                        const readCharacteristicForDeviceArgs = args as MethodCallArguments & {
+                            arguments: { identifier: string, serviceUuid: UUID, characteristicUuid: UUID, transactionId: string }
+                        }
                         const readCharacteristicForDeviceResult: SimulatedBleError | TransferCharacteristic
                             = await this.manager.readCharacteristicForDevice(
                                 readCharacteristicForDeviceArgs.arguments.identifier,
                                 readCharacteristicForDeviceArgs.arguments.serviceUuid,
                                 readCharacteristicForDeviceArgs.arguments.characteristicUuid
                             )
-                        if (readCharacteristicForDeviceResult instanceof SimulatedBleError) {
-                            blemulatorModule.handleReturnCall(args.callbackId, { error: readCharacteristicForDeviceResult })
-                        } else {
-                            blemulatorModule.handleReturnCall(args.callbackId, { value: readCharacteristicForDeviceResult })
+                        this.callbackErrorOrValue(args.callbackId, readCharacteristicForDeviceResult)
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC:
+                        const writeCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                characteristicId: number,
+                            }
                         }
+                        const writeCharacteristicResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristic(
+                                writeCharacteristicArgs.arguments.characteristicId,
+                                writeCharacteristicArgs.arguments.value,
+                                writeCharacteristicArgs.arguments.withResponse,
+                                writeCharacteristicArgs.arguments.transactionId
+                            )
+
+                        this.callbackErrorOrValue(args.callbackId, writeCharacteristicResult)
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE:
+                        const writeCharacteristicForServiceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                serviceId: number,
+                                characteristicUuid: UUID,
+                            }
+                        }
+                        const writeCharacteristicForServiceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristicForService(
+                                writeCharacteristicForServiceArgs.arguments.serviceId,
+                                writeCharacteristicForServiceArgs.arguments.characteristicUuid,
+                                writeCharacteristicForServiceArgs.arguments.value,
+                                writeCharacteristicForServiceArgs.arguments.withResponse,
+                                writeCharacteristicForServiceArgs.arguments.transactionId
+                            )
+
+                        this.callbackErrorOrValue(args.callbackId, writeCharacteristicForServiceResult)
+                        break
+                    case MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE:
+                        const writeCharacteristicForDeviceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                transactionId: string,
+                                withResponse: boolean,
+                                value: Base64,
+                                identifier: string,
+                                serviceUuid: UUID,
+                                characteristicUuid: UUID,
+                            }
+                        }
+                        const writeCharacteristicForDeviceResult: SimulatedBleError | TransferCharacteristic
+                            = await this.manager.writeCharacteristicForDevice(
+                                writeCharacteristicForDeviceArgs.arguments.identifier,
+                                writeCharacteristicForDeviceArgs.arguments.serviceUuid,
+                                writeCharacteristicForDeviceArgs.arguments.characteristicUuid,
+                                writeCharacteristicForDeviceArgs.arguments.value,
+                                writeCharacteristicForDeviceArgs.arguments.withResponse,
+                                writeCharacteristicForDeviceArgs.arguments.transactionId
+                            )
+
+                        this.callbackErrorOrValue(args.callbackId, writeCharacteristicForDeviceResult)
                         break
                     case MethodName.MONITOR_CHARACTERISTIC:
                         const monitorCharacteristicArgs = args as MethodCallArguments & {
@@ -230,6 +282,14 @@ export class Bridge {
 
     simulate(): Promise<void> {
         return blemulatorModule.simulate()
+    }
+
+    private callbackErrorOrValue(callbackId: string, result: SimulatedBleError | any) {
+        if (result instanceof SimulatedBleError) {
+            blemulatorModule.handleReturnCall(callbackId, { error: result })
+        } else {
+            blemulatorModule.handleReturnCall(callbackId, { value: result })
+        }
     }
 
     private setupConnectionStatePublisher() {
