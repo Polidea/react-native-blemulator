@@ -330,7 +330,7 @@ public class PlatformToJsBridge {
         arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE, arguments, new JsCallHandler.Callback() {
+        callMethod(MethodName.MONITOR_CHARACTERISTIC, arguments, new JsCallHandler.Callback() {
             @Override
             public void invoke(ReadableMap args) {
                 //any errors will be handled in SimulatedAdapter.publishNotification()
