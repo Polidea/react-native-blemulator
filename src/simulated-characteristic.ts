@@ -62,7 +62,10 @@ export class SimulatedCharacteristic {
         return this.value
     }
 
-    async write(newValue: Base64, withResponse: boolean, optionalArgs?: { sendNotification: boolean }): Promise<void> {
+    async write(newValue: Base64, optionalArgs?: {
+        withResponse?: boolean,
+        sendNotification: boolean
+    }): Promise<void> {
         this.value = newValue
         if (optionalArgs?.sendNotification) {
             this.listeners.forEach((extendedListener) => extendedListener.valueListener(newValue))

@@ -143,7 +143,7 @@ export class CharacteristicsDelegate {
         errorIfBluetoothNotSupported(this.getAdapterState())
         errorIfBluetoothNotOn(this.getAdapterState())
         errorIfPeripheralDisconnected(peripheral)
-        
+
         const returnedCharacteristic: TransferCharacteristic
             = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
         return returnedCharacteristic
@@ -247,7 +247,7 @@ export class CharacteristicsDelegate {
             errorIfNotWritableWithoutResponse(characteristic)
         }
 
-        await characteristic.write(value, withResponse, { sendNotification: true })
+        await characteristic.write(value, { withResponse: withResponse, sendNotification: true })
 
         errorIfBluetoothNotSupported(this.getAdapterState())
         errorIfBluetoothNotOn(this.getAdapterState())

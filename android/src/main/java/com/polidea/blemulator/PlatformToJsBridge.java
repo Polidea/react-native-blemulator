@@ -259,7 +259,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_CHARACTERISTIC_FOR_SERVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+        callMethod(
+                MethodName.READ_CHARACTERISTIC_FOR_SERVICE,
+                arguments,
+                createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback)
+        );
     }
 
     public void readCharacteristic(int characteristicIdentifier,
@@ -270,7 +274,11 @@ public class PlatformToJsBridge {
         arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_CHARACTERISTIC, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+        callMethod(
+                MethodName.READ_CHARACTERISTIC,
+                arguments,
+                createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback)
+        );
     }
 
     private JsCallHandler.Callback createCallbackReturningCharacteristicOrError(
@@ -304,7 +312,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.VALUE, valueBase64);
         arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
 
-        callMethod(MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+        callMethod(
+                MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE,
+                arguments,
+                createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback)
+        );
     }
 
     public void writeCharacteristicForService(int serviceIdentifier,
@@ -322,7 +334,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.VALUE, valueBase64);
         arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
 
-        callMethod(MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+        callMethod(
+                MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE,
+                arguments,
+                createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback)
+        );
     }
 
     public void writeCharacteristic(int characteristicIdentifier,
@@ -338,7 +354,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.VALUE, valueBase64);
         arguments.putBoolean(JsArgumentName.WITH_RESPONSE, withResponse);
 
-        callMethod(MethodName.WRITE_CHARACTERISTIC, arguments, createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback));
+        callMethod(
+                MethodName.WRITE_CHARACTERISTIC,
+                arguments,
+                createCallbackReturningCharacteristicOrError(onSuccessCallback, onErrorCallback)
+        );
     }
 
     public void monitorCharacteristicForDevice(String deviceIdentifier,
