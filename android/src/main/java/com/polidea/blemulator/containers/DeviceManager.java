@@ -26,6 +26,12 @@ public class DeviceManager {
         }
     }
 
+    public void updateDevice(String deviceId, String name) {
+        if (deviceContainers.containsKey(deviceId)) {
+            deviceContainers.get(deviceId).getDevice().setName(name);
+        }
+    }
+
     public DeviceContainer getDeviceContainerForGattId(int id) {
         for (DeviceContainer deviceContainer : deviceContainers.values()) {
             if (deviceContainer.hasId(id)) {

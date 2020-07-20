@@ -1,6 +1,6 @@
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfUnknown, errorIfConnected, errorIfNotConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported } from "../error_creator";
+import { errorIfUnknown, errorIfConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported } from "../error_creator";
 import { AdapterState, ConnectionState, Subscription } from "../../types";
 import { Platform } from 'react-native';
 import { MAX_iOS_MTU } from './mtu-delegate'
@@ -20,8 +20,7 @@ export class ConnectionDelegate {
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         requestMtu?: number
-    ): Promise<SimulatedBleError | undefined> {
-
+    ): Promise<SimulatedBleError | SimulatedPeripheral> {
         try {
             errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
@@ -61,12 +60,16 @@ export class ConnectionDelegate {
                 errorConnectionFailed(peripheralIdentifier);
             }
             this.pendingDisconnections.delete(peripheralIdentifier)
-    
+            return peripheral
         } catch (error) {
             if (error instanceof SimulatedBleError)
                 return error
             else {
                 console.error(error)
+                return new SimulatedBleError({
+                    errorCode: BleErrorCode.UnknownError,
+                    message: error
+                })
             }
         }
     }
