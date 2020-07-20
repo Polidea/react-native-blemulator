@@ -421,7 +421,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_DESCRIPTOR_FOR_DEVICE, arguments, createCallbackReturningDescriptorOrError(successCallback, errorCallback));
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_DEVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
     }
 
     public void readDescriptorForService(int serviceIdentifier,
@@ -436,7 +440,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_DESCRIPTOR_FOR_SERVICE, arguments, createCallbackReturningDescriptorOrError(successCallback, errorCallback));
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_SERVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
     }
 
     public void readDescriptorForCharacteristic(int characteristicIdentifier,
@@ -449,7 +457,11 @@ public class PlatformToJsBridge {
         arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC, arguments, createCallbackReturningDescriptorOrError(successCallback, errorCallback));
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
     }
 
     public void readDescriptor(int descriptorIdentifier,
@@ -460,10 +472,17 @@ public class PlatformToJsBridge {
         arguments.putInt(JsArgumentName.DESCRIPTOR_ID, descriptorIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
 
-        callMethod(MethodName.READ_DESCRIPTOR, arguments, createCallbackReturningDescriptorOrError(successCallback, errorCallback));
+        callMethod(
+                MethodName.READ_DESCRIPTOR,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
     }
 
-    private JsCallHandler.Callback createCallbackReturningDescriptorOrError(final OnSuccessCallback<Descriptor> successCallback, final OnErrorCallback errorCallback) {
+    private JsCallHandler.Callback createCallbackReturningDescriptorOrError(
+            final OnSuccessCallback<Descriptor> successCallback,
+            final OnErrorCallback errorCallback
+    ) {
         return new JsCallHandler.Callback() {
             @Override
             public void invoke(ReadableMap args) {

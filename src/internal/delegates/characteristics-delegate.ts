@@ -9,8 +9,7 @@ import {
     errorChecksForAccessToGatt,
     errorIfNotWritableWithResponse,
     errorIfNotWritableWithoutResponse,
-    errorIfBluetoothNotSupported,
-    errorIfBluetoothNotOn,
+    errorChecksAfterOperation,
 } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
@@ -140,9 +139,7 @@ export class CharacteristicsDelegate {
         errorIfCharacteristicNotReadable(characteristic!)
         const value: Base64 = await characteristic!.read()
 
-        errorIfBluetoothNotSupported(this.getAdapterState())
-        errorIfBluetoothNotOn(this.getAdapterState())
-        errorIfPeripheralDisconnected(peripheral)
+        errorChecksAfterOperation(this.getAdapterState(), peripheral)
 
         const returnedCharacteristic: TransferCharacteristic
             = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
@@ -167,8 +164,7 @@ export class CharacteristicsDelegate {
             return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic,
                 matchedPeripheral!,
-                value, withResponse,
-                transactionId
+                value, withResponse
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
@@ -196,8 +192,7 @@ export class CharacteristicsDelegate {
             return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
                 matchedPeripheral!,
-                value, withResponse,
-                transactionId
+                value, withResponse
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
@@ -226,8 +221,7 @@ export class CharacteristicsDelegate {
             return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
                 matchedPeripheral!,
-                value, withResponse,
-                transactionId
+                value, withResponse
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
@@ -238,9 +232,7 @@ export class CharacteristicsDelegate {
         characteristic: SimulatedCharacteristic,
         peripheral: SimulatedPeripheral,
         value: Base64,
-        withResponse: boolean,
-        transactionId: string
-    ): Promise<TransferCharacteristic> {
+        withResponse: boolean    ): Promise<TransferCharacteristic> {
         if (withResponse) {
             errorIfNotWritableWithResponse(characteristic)
         } else {
@@ -249,9 +241,7 @@ export class CharacteristicsDelegate {
 
         await characteristic.write(value, { withResponse: withResponse, sendNotification: true })
 
-        errorIfBluetoothNotSupported(this.getAdapterState())
-        errorIfBluetoothNotOn(this.getAdapterState())
-        errorIfPeripheralDisconnected(peripheral)
+        errorChecksAfterOperation(this.getAdapterState(), peripheral)
 
         return mapToTransferCharacteristic(characteristic, peripheral.id, value)
     }
