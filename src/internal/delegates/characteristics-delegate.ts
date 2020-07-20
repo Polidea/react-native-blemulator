@@ -2,7 +2,7 @@ import { Base64, AdapterState, UUID, Subscription } from "../../types";
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
 import {
-    errorIfNotReadable,
+    errorIfCharacteristicNotReadable,
     errorIfPeripheralDisconnected,
     errorIfCharacteristicNotFound,
     errorIfNotMonitorable,
@@ -14,7 +14,7 @@ import {
 } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
-import { findPeripheralWithService, findPeripheralWithCharacteristic } from "../utils";
+import { findPeripheralWithService, findPeripheralWithCharacteristic, mapErrorToSimulatedBleError } from "../utils";
 
 export class CharacteristicsDelegate {
     private readonly getAdapterState: () => AdapterState
@@ -77,7 +77,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -102,7 +102,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -128,7 +128,7 @@ export class CharacteristicsDelegate {
                 matchedPeripheral!
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -137,7 +137,7 @@ export class CharacteristicsDelegate {
         peripheral: SimulatedPeripheral
     ): Promise<TransferCharacteristic> {
 
-        errorIfNotReadable(characteristic!)
+        errorIfCharacteristicNotReadable(characteristic!)
         const value: Base64 = await characteristic!.read()
 
         errorIfBluetoothNotSupported(this.getAdapterState())
@@ -171,7 +171,7 @@ export class CharacteristicsDelegate {
                 transactionId
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -200,7 +200,7 @@ export class CharacteristicsDelegate {
                 transactionId
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -230,7 +230,7 @@ export class CharacteristicsDelegate {
                 transactionId
             )
         } catch (error) {
-            return this.handleError(error)
+            return mapErrorToSimulatedBleError(error)
         }
     }
 
@@ -313,14 +313,6 @@ export class CharacteristicsDelegate {
             this.handleSubscription(transactionId, matchedPeripheral!, characteristic!)
         } catch (error) {
             this.handleMonitoringError(transactionId, error)
-        }
-    }
-
-    private handleError(error: any): SimulatedBleError {
-        if (error instanceof SimulatedBleError) {
-            return error
-        } else {
-            return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
         }
     }
 

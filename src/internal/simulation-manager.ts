@@ -8,8 +8,9 @@ import { AdapterStateDelegate, AdapterStateChangeListener } from './delegates/ad
 import { SimulatedService } from '../simulated-service'
 import { DiscoveryDelegate } from './delegates/discovery-delegate'
 import { CharacteristicsDelegate } from './delegates/characteristics-delegate'
-import { TransferCharacteristic } from './internal-types'
+import { TransferCharacteristic, TransferDescriptor } from './internal-types'
 import { MtuDelegate } from './delegates/mtu-delegate'
+import { DescriptorsDelegate } from './delegates/descriptors-delegate'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
 
@@ -21,6 +22,7 @@ export class SimulationManager {
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState())
+    private descriptorsDelegate: DescriptorsDelegate = new DescriptorsDelegate(() => this.getAdapterState())
     private mtuDelegate: MtuDelegate = new MtuDelegate()
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
@@ -206,5 +208,45 @@ export class SimulationManager {
     ): void {
         this.characteristicsDelegate.monitorCharacteristicForDevice(this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, transactionId)
+    }
+
+    async readDescriptor(
+        descriptorId: number,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.readDescriptor(this.peripherals, descriptorId, transactionId)
+    }
+
+    async readDescriptorForCharacteristic(
+        characteristicId: number,
+        descriptorUuid: UUID,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.readDescriptorForCharacteristic(
+            this.peripherals, characteristicId, descriptorUuid, transactionId
+        )
+    }
+
+    async readDescriptorForService(
+        serviceId: number,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.readDescriptorForService(
+            this.peripherals, serviceId, characteristicUuid, descriptorUuid, transactionId
+        )
+    }
+
+    async readDescriptorForDevice(
+        peripheralId: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.readDescriptorForDevice(
+            this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, descriptorUuid, transactionId
+        )
     }
 }

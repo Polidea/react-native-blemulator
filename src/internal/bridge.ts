@@ -46,6 +46,10 @@ enum MethodName {
     MONITOR_CHARACTERISTIC = "monitorCharacteristic",
     MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService",
     MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice",
+    READ_DESCRIPTOR = "readDescriptor",
+    READ_DESCRIPTOR_FOR_CHARACTERISTIC = "readDescriptorForCharacteristic",
+    READ_DESCRIPTOR_FOR_SERVICE = "readDescriptorForService",
+    READ_DESCRIPTOR_FOR_DEVICE = "readDescriptorForDevice",
 }
 
 export class Bridge {
@@ -272,6 +276,70 @@ export class Bridge {
                             monitorCharacteristicForDeviceArgs.arguments.transactionId
                         )
                         blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
+                    case MethodName.READ_DESCRIPTOR:
+                        const readDescriptorArgs = args as MethodCallArguments & {
+                            arguments: {
+                                descriptorId: number,
+                                transactionId: string,
+                            }
+                        }
+                        const readDescriptorResult = await this.manager.readDescriptor(
+                            readDescriptorArgs.arguments.descriptorId,
+                            readDescriptorArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, readDescriptorResult)
+                        break
+                    case MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC:
+                        const readDescriptorForCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: {
+                                characteristicId: number,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                            }
+                        }
+                        const readDescriptorForCharacteristicResult = await this.manager.readDescriptorForCharacteristic(
+                            readDescriptorForCharacteristicArgs.arguments.characteristicId,
+                            readDescriptorForCharacteristicArgs.arguments.descriptorUuid,
+                            readDescriptorForCharacteristicArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, readDescriptorForCharacteristicResult)
+                        break
+                    case MethodName.READ_DESCRIPTOR_FOR_SERVICE:
+                        const readDescriptorForServiceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                serviceId: number,
+                                characteristicUuid: UUID,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                            }
+                        }
+                        const readDescriptorForServiceResult = await this.manager.readDescriptorForService(
+                            readDescriptorForServiceArgs.arguments.serviceId,
+                            readDescriptorForServiceArgs.arguments.characteristicUuid,
+                            readDescriptorForServiceArgs.arguments.descriptorUuid,
+                            readDescriptorForServiceArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, readDescriptorForServiceResult)
+                        break
+                    case MethodName.READ_DESCRIPTOR_FOR_DEVICE:
+                        const readDescriptorForDeviceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                identifier: string,
+                                serviceUuid: UUID,
+                                characteristicUuid: UUID,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                            }
+                        }
+                        const readDescriptorForDeviceResult = await this.manager.readDescriptorForDevice(
+                            readDescriptorForDeviceArgs.arguments.identifier,
+                            readDescriptorForDeviceArgs.arguments.serviceUuid,
+                            readDescriptorForDeviceArgs.arguments.characteristicUuid,
+                            readDescriptorForDeviceArgs.arguments.descriptorUuid,
+                            readDescriptorForDeviceArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, readDescriptorForDeviceResult)
                         break
                     default:
                         console.log("Uknown method requested")

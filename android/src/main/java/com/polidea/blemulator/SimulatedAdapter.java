@@ -475,23 +475,51 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void readDescriptorForDevice(String deviceId, String serviceUUID, String characteristicUUID, String descriptorUUID, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void readDescriptorForDevice(String deviceId,
+                                        String serviceUUID,
+                                        String characteristicUUID,
+                                        String descriptorUUID,
+                                        String transactionId,
+                                        OnSuccessCallback<Descriptor> successCallback,
+                                        OnErrorCallback errorCallback) {
         Log.i(TAG, "readDescriptorForDevice called");
+        bridge.readDescriptorForDevice(deviceId, serviceUUID,
+                characteristicUUID, descriptorUUID, transactionId, successCallback, errorCallback
+        );
     }
 
     @Override
-    public void readDescriptorForService(int serviceIdentifier, String characteristicUUID, String descriptorUUID, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void readDescriptorForService(int serviceIdentifier,
+                                         String characteristicUUID,
+                                         String descriptorUUID,
+                                         String transactionId,
+                                         OnSuccessCallback<Descriptor> successCallback,
+                                         OnErrorCallback errorCallback) {
         Log.i(TAG, "readDescriptorForService called");
+        bridge.readDescriptorForService(serviceIdentifier,
+                characteristicUUID, descriptorUUID, transactionId, successCallback, errorCallback
+        );
     }
 
     @Override
-    public void readDescriptorForCharacteristic(int characteristicIdentifier, String descriptorUUID, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void readDescriptorForCharacteristic(int characteristicIdentifier,
+                                                String descriptorUUID,
+                                                String transactionId,
+                                                OnSuccessCallback<Descriptor> successCallback,
+                                                OnErrorCallback errorCallback) {
         Log.i(TAG, "readDescriptorForCharacteristic called");
+        bridge.readDescriptorForCharacteristic(characteristicIdentifier,
+                descriptorUUID, transactionId, successCallback, errorCallback
+        );
     }
 
     @Override
-    public void readDescriptor(int descriptorIdentifier, String transactionId, OnSuccessCallback<Descriptor> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void readDescriptor(int descriptorIdentifier,
+                               String transactionId,
+                               OnSuccessCallback<Descriptor> onSuccessCallback,
+                               OnErrorCallback onErrorCallback) {
         Log.i(TAG, "readDescriptor called");
+        bridge.readDescriptor(descriptorIdentifier, transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override

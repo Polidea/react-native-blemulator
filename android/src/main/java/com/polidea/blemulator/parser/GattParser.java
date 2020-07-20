@@ -60,6 +60,28 @@ public class GattParser {
         return cachedCharacteristic;
     }
 
+    public Descriptor parseDescriptor(ReadableMap serializedDescriptor) {
+        String uuid = serializedDescriptor.getString(NativeArgumentName.UUID);
+        String characteristicUuid = serializedDescriptor.getString(NativeArgumentName.CHARACTERISTIC_UUID);
+        String serviceUuid = serializedDescriptor.getString(NativeArgumentName.SERVICE_UUID);
+        String deviceId = serializedDescriptor.getString(NativeArgumentName.DEVICE_ID);
+        int id = serializedDescriptor.getInt(NativeArgumentName.ID);
+        int characteristicId = serializedDescriptor.getInt(NativeArgumentName.CHARACTERISTIC_ID);
+        int serviceId = serializedDescriptor.getInt(NativeArgumentName.SERVICE_ID);
+        String value = serializedDescriptor.getString(NativeArgumentName.VALUE);
+
+        BluetoothGattDescriptor btDescriptor = new BluetoothGattDescriptor(UUID.fromString(uuid), 0);
+        Descriptor descriptor = new Descriptor(characteristicId,
+                serviceId, UUID.fromString(characteristicUuid),
+                UUID.fromString(serviceUuid),
+                deviceId, btDescriptor, id, UUID.fromString(uuid));
+
+        if (value != null) {
+            descriptor.setValue(Base64.decode(value, 0));
+        }
+        return descriptor;
+    }
+
     public List<CachedService> parseDiscoveryResponse(ReadableArray response) {
         ArrayList<CachedService> result = new ArrayList<>();
 
@@ -78,7 +100,6 @@ public class GattParser {
             }
             result.add(cachedService);
         }
-
 
         return result;
     }
@@ -105,19 +126,7 @@ public class GattParser {
         for (int i = 0; i < response.size(); i++) {
             ReadableMap serializedDescriptor = response.getMap(i);
 
-            String uuid = serializedDescriptor.getString(NativeArgumentName.UUID);
-            String characteristicUuid = serializedDescriptor.getString(NativeArgumentName.CHARACTERISTIC_UUID);
-            String serviceUuid = serializedDescriptor.getString(NativeArgumentName.SERVICE_UUID);
-            String deviceId = serializedDescriptor.getString(NativeArgumentName.DEVICE_ID);
-            int id = serializedDescriptor.getInt(NativeArgumentName.ID);
-            int characteristicId = serializedDescriptor.getInt(NativeArgumentName.CHARACTERISTIC_ID);
-            int serviceId = serializedDescriptor.getInt(NativeArgumentName.SERVICE_ID);
-
-            BluetoothGattDescriptor btDescriptor = new BluetoothGattDescriptor(UUID.fromString(uuid), 0);
-            Descriptor descriptor = new Descriptor(characteristicId,
-                    serviceId, UUID.fromString(characteristicUuid),
-                    UUID.fromString(serviceUuid),
-                    deviceId, btDescriptor, id, UUID.fromString(uuid));
+            Descriptor descriptor = parseDescriptor(serializedDescriptor);
 
             result.add(descriptor);
         }

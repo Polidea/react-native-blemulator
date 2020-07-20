@@ -29,4 +29,9 @@ public interface MethodName {
     String MONITOR_CHARACTERISTIC = "monitorCharacteristic";
     String MONITOR_CHARACTERISTIC_FOR_SERVICE = "monitorCharacteristicForService";
     String MONITOR_CHARACTERISTIC_FOR_DEVICE = "monitorCharacteristicForDevice";
+
+    String READ_DESCRIPTOR = "readDescriptor";
+    String READ_DESCRIPTOR_FOR_CHARACTERISTIC = "readDescriptorForCharacteristic";
+    String READ_DESCRIPTOR_FOR_SERVICE = "readDescriptorForService";
+    String READ_DESCRIPTOR_FOR_DEVICE = "readDescriptorForDevice";
 }
