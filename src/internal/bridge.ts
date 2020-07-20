@@ -5,6 +5,7 @@ import { SimulationManager } from "./simulation-manager";
 import { UUID, ConnectionState, AdapterState, Base64 } from "../types";
 import { SimulatedService } from "../simulated-service";
 import { TransferCharacteristic, mapToTransferService } from "./internal-types";
+import { SimulatedPeripheral } from "../simulated-peripheral";
 
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
@@ -103,8 +104,19 @@ export class Bridge {
                                 identifier: string, isAutoConnect?: boolean, requestMtu?: number, refreshGatt?: boolean, timeout?: number
                             }
                         }
-                        error = await this.manager.connect(connectArgs.arguments.identifier, connectArgs.arguments.requestMtu)
-                        blemulatorModule.handleReturnCall(args.callbackId, { error: error })
+                        const connectResult: SimulatedBleError | SimulatedPeripheral = await this.manager.connect(
+                            connectArgs.arguments.identifier, connectArgs.arguments.requestMtu
+                        )
+                        if (connectResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: error })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, {
+                                value: {
+                                    id: connectResult.id,
+                                    name: connectResult.name ? connectResult.name : null
+                                 }
+                            })
+                        }
                         break
                     case MethodName.DISCONNECT:
                         const disconnectArgs = args as MethodCallArguments & { arguments: { identifier: string } }

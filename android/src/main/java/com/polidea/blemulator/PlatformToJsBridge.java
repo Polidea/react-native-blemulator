@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.polidea.blemulator.containers.CachedService;
+import com.polidea.blemulator.parser.DeviceParser;
 import com.polidea.blemulator.parser.ErrorParser;
 import com.polidea.blemulator.parser.GattParser;
 import com.polidea.multiplatformbleadapter.Characteristic;
@@ -29,6 +30,7 @@ public class PlatformToJsBridge {
     private final JsCallHandler callHandler;
     private final GattParser gattParser = new GattParser();
     private final ErrorParser errorParser = new ErrorParser();
+    private final DeviceParser deviceParser = new DeviceParser();
 
     public PlatformToJsBridge(ReactContext reactContext, JsCallHandler callHandler) {
         this.reactContext = reactContext;
@@ -144,7 +146,8 @@ public class PlatformToJsBridge {
                 if (args.hasKey(NativeArgumentName.ERROR)) {
                     onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
                 } else {
-                    onSuccessCallback.onSuccess(null);
+                    Device device = deviceParser.parseDevice(args.getMap(NativeArgumentName.VALUE));
+                    onSuccessCallback.onSuccess(device);
                 }
             }
         });

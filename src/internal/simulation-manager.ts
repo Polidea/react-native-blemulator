@@ -70,7 +70,7 @@ export class SimulationManager {
         return this.scanDelegate.stopScan()
     }
 
-    async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | undefined> {
+    async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | SimulatedPeripheral> {
         return this.connectionDelegate.connect(this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralIdentifier, requestMtu)
     }

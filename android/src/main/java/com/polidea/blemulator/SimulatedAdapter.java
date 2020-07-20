@@ -180,11 +180,13 @@ public class SimulatedAdapter implements BleAdapter {
                                 OnEventCallback<ConnectionState> onConnectionStateChangedCallback,
                                 OnErrorCallback onErrorCallback) {
         Log.i(TAG, "connectToDevice called");
+        deviceManager.addDeviceIfUnknown(deviceIdentifier, null);
         connectionStateCallbacks.put(deviceIdentifier, onConnectionStateChangedCallback);
         OnSuccessCallback<Device> modifiedOnSuccessCallback = new OnSuccessCallback<Device>() {
             @Override
             public void onSuccess(Device data) {
-                onSuccessCallback.onSuccess(deviceManager.getDeviceContainer(deviceIdentifier).getDevice());
+                deviceManager.updateDevice(deviceIdentifier, data.getName());
+                onSuccessCallback.onSuccess(data);
             }
         };
         bridge.connect(deviceIdentifier, connectionOptions, modifiedOnSuccessCallback, onErrorCallback);
