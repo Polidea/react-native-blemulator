@@ -12,6 +12,7 @@ import com.polidea.blemulator.parser.ErrorParser;
 import com.polidea.blemulator.parser.GattParser;
 import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.multiplatformbleadapter.ConnectionOptions;
+import com.polidea.multiplatformbleadapter.Descriptor;
 import com.polidea.multiplatformbleadapter.Device;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
 import com.polidea.multiplatformbleadapter.OnSuccessCallback;
@@ -303,7 +304,6 @@ public class PlatformToJsBridge {
                                              String transactionId,
                                              OnSuccessCallback<Characteristic> onSuccessCallback,
                                              OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "writeCharacteristicForDevice called");
         WritableMap arguments = Arguments.createMap();
         arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
         arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
@@ -326,7 +326,6 @@ public class PlatformToJsBridge {
                                               String transactionId,
                                               OnSuccessCallback<Characteristic> onSuccessCallback,
                                               OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "writeCharacteristicForService called");
         WritableMap arguments = Arguments.createMap();
         arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
         arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
@@ -347,7 +346,6 @@ public class PlatformToJsBridge {
                                     String transactionId,
                                     OnSuccessCallback<Characteristic> onSuccessCallback,
                                     OnErrorCallback onErrorCallback) {
-        Log.i(TAG, "writeCharacteristic called");
         WritableMap arguments = Arguments.createMap();
         arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
@@ -365,7 +363,6 @@ public class PlatformToJsBridge {
                                                String serviceUUID,
                                                String characteristicUUID,
                                                String transactionId) {
-        Log.i(TAG, "monitorCharacteristicForDevice called");
         WritableMap arguments = Arguments.createMap();
         arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
         arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
@@ -383,7 +380,6 @@ public class PlatformToJsBridge {
     public void monitorCharacteristicForService(int serviceIdentifier,
                                                 String characteristicUUID,
                                                 String transactionId) {
-        Log.i(TAG, "monitorCharacteristicForService called");
         WritableMap arguments = Arguments.createMap();
         arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
         arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
@@ -399,7 +395,6 @@ public class PlatformToJsBridge {
 
     public void monitorCharacteristic(int characteristicIdentifier,
                                       String transactionId) {
-        Log.i(TAG, "monitorCharacteristic called");
         WritableMap arguments = Arguments.createMap();
         arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
@@ -410,6 +405,94 @@ public class PlatformToJsBridge {
                 //any errors will be handled in SimulatedAdapter.publishNotification()
             }
         });
+    }
+
+    public void readDescriptorForDevice(String deviceId,
+                                        String serviceUUID,
+                                        String characteristicUUID,
+                                        String descriptorUUID,
+                                        String transactionId,
+                                        OnSuccessCallback<Descriptor> successCallback,
+                                        OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceId);
+        arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_DEVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void readDescriptorForService(int serviceIdentifier,
+                                         String characteristicUUID,
+                                         String descriptorUUID,
+                                         String transactionId,
+                                         OnSuccessCallback<Descriptor> successCallback,
+                                         OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_SERVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void readDescriptorForCharacteristic(int characteristicIdentifier,
+                                                String descriptorUUID,
+                                                String transactionId,
+                                                OnSuccessCallback<Descriptor> successCallback,
+                                                OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(
+                MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void readDescriptor(int descriptorIdentifier,
+                               String transactionId,
+                               OnSuccessCallback<Descriptor> successCallback,
+                               OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.DESCRIPTOR_ID, descriptorIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(
+                MethodName.READ_DESCRIPTOR,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    private JsCallHandler.Callback createCallbackReturningDescriptorOrError(
+            final OnSuccessCallback<Descriptor> successCallback,
+            final OnErrorCallback errorCallback
+    ) {
+        return new JsCallHandler.Callback() {
+            @Override
+            public void invoke(ReadableMap args) {
+                if (args.hasKey(NativeArgumentName.ERROR)) {
+                    errorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
+                } else {
+                    successCallback.onSuccess(gattParser.parseDescriptor(args.getMap(NativeArgumentName.VALUE)));
+                }
+            }
+        };
     }
 
     private void callMethod(String methodName, @Nullable ReadableMap arguments, JsCallHandler.Callback callback) {

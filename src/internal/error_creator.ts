@@ -2,6 +2,7 @@ import { SimulatedPeripheral } from "../simulated-peripheral";
 import { SimulatedBleError, BleErrorCode } from "../ble-error";
 import { AdapterState } from "../types";
 import { SimulatedCharacteristic } from "../simulated-characteristic";
+import { SimulatedDescriptor } from "../simulated-descriptor";
 
 export function errorIfScanInProgress(isScanInProgress: boolean): void {
     if (isScanInProgress) {
@@ -112,7 +113,7 @@ export function errorIfPeripheralDisconnected(peripheral: SimulatedPeripheral): 
     }
 }
 
-export function errorIfNotReadable(characteristic: SimulatedCharacteristic): void {
+export function errorIfCharacteristicNotReadable(characteristic: SimulatedCharacteristic): void {
     if (!characteristic.isReadable) {
         const error: SimulatedBleError = new SimulatedBleError({
             errorCode: BleErrorCode.CharacteristicReadFailed,
@@ -163,6 +164,12 @@ export function errorChecksForAccessToGatt(adapterState: AdapterState, periphera
     errorIfDiscoveryNotDone(peripheral!)
 }
 
+export function errorChecksAfterOperation(adapterState: AdapterState, peripheral: SimulatedPeripheral) {
+    errorIfBluetoothNotSupported(adapterState)
+    errorIfBluetoothNotOn(adapterState)
+    errorIfPeripheralDisconnected(peripheral)
+}
+
 export function errorIfNotMonitorable(characteristic: SimulatedCharacteristic): void {
     if (!characteristic.isIndicatable && !characteristic.isNotifiable) {
         const error: SimulatedBleError = new SimulatedBleError({
@@ -191,6 +198,27 @@ export function errorIfNotWritableWithoutResponse(characteristic: SimulatedChara
             errorCode: BleErrorCode.CharacteristicWriteFailed,
             message: 'Characteristic not writable without response',
             characteristicUuid: characteristic.uuid,
+        })
+        throw error
+    }
+}
+
+export function errorIfDescriptorNotReadable(descriptor: SimulatedDescriptor): void {
+    if (!descriptor.isReadable) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DescriptorReadFailed,
+            message: 'Descriptor not readable',
+            descriptorUuid: descriptor.uuid,
+        })
+        throw error
+    }
+}
+
+export function errorIfDescriptorNotFound(descriptor: SimulatedDescriptor | undefined | null): void {
+    if (!descriptor) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DescriptorNotFound,
+            message: 'Descriptor not found',
         })
         throw error
     }

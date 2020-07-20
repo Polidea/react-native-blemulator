@@ -40,7 +40,11 @@ export function mapToTransferService(service: SimulatedService, peripheralId: st
         peripheralId: peripheralId,
         id: service.id,
         uuid: service.uuid,
-        characteristics: service.getCharacteristics().map((charateristic) => mapToTransferCharacteristic(charateristic, peripheralId))
+        characteristics: service.getCharacteristics().map(
+            (charateristic) => mapToTransferCharacteristic(
+                charateristic, peripheralId, undefined, charateristic.getDescriptors()
+            )
+        )
     }
 }
 
