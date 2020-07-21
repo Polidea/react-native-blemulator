@@ -223,3 +223,14 @@ export function errorIfDescriptorNotFound(descriptor: SimulatedDescriptor | unde
         throw error
     }
 }
+
+export function errorIfDescriptorNotWritable(descriptor: SimulatedDescriptor): void {
+    if (!descriptor.isWritable) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.DescriptorWriteFailed,
+            message: 'Descriptor not writable',
+            descriptorUuid: descriptor.uuid,
+        })
+        throw error
+    }
+}

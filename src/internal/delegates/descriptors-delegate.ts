@@ -12,7 +12,8 @@ import {
     errorChecksForAccessToGatt,
     errorIfDescriptorNotReadable,
     errorChecksAfterOperation,
-    errorIfDescriptorNotFound
+    errorIfDescriptorNotFound,
+    errorIfDescriptorNotWritable
 } from "../error_creator";
 import { SimulatedDescriptor } from "../../simulated-descriptor";
 
@@ -106,5 +107,93 @@ export class DescriptorsDelegate {
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
         const readDescriptor: TransferDescriptor = mapToTransferDescriptor(descriptor, peripheral.id, value)
         return readDescriptor
+    }
+
+    async writeDescriptorForDevice(
+        peripherals: Map<string, SimulatedPeripheral>,
+        peripheralId: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        try {
+            const matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+            const descriptor: SimulatedDescriptor | undefined
+                = matchedPeripheral!.getDescriptorForCharacteristicAndService(serviceUuid, characteristicUuid, descriptorUuid)
+            errorIfDescriptorNotFound(descriptor)
+            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        }
+    }
+
+    async writeDescriptorForService(
+        peripherals: Array<SimulatedPeripheral>,
+        serviceId: number,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        try {
+            const matchedPeripheral: SimulatedPeripheral | null
+                = findPeripheralWithService(peripherals, serviceId)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+            const descriptor: SimulatedDescriptor | undefined
+                = matchedPeripheral!.getDescriptorForService(serviceId, characteristicUuid, descriptorUuid)
+            errorIfDescriptorNotFound(descriptor)
+            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        }
+    }
+
+    async writeDescriptorForCharacteristic(
+        peripherals: Array<SimulatedPeripheral>,
+        characteristicId: number,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        try {
+            const matchedPeripheral: SimulatedPeripheral | null
+                = findPeripheralWithCharacteristic(peripherals, characteristicId)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+            const descriptor: SimulatedDescriptor | undefined
+                = matchedPeripheral!.getDescriptorForCharacteristic(characteristicId, descriptorUuid)
+            errorIfDescriptorNotFound(descriptor)
+            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        }
+    }
+
+    async writeDescriptor(
+        peripherals: Array<SimulatedPeripheral>,
+        descriptorId: number,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        try {
+            const matchedPeripheral: SimulatedPeripheral | null
+                = findPeripheralWithDescriptor(peripherals, descriptorId)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
+            const descriptor: SimulatedDescriptor = matchedPeripheral!.getDescriptor(descriptorId)!
+            return this.writeAndMapDescriptor(descriptor, matchedPeripheral!, value)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        }
+    }
+
+    private async writeAndMapDescriptor(
+        descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral, value: Base64
+    ): Promise<TransferDescriptor> {
+        errorIfDescriptorNotWritable(descriptor)
+        await descriptor.write(value)
+        errorChecksAfterOperation(this.getAdapterState(), peripheral)
+        return mapToTransferDescriptor(descriptor, peripheral.id, value)
     }
 }

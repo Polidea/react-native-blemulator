@@ -51,6 +51,10 @@ enum MethodName {
     READ_DESCRIPTOR_FOR_CHARACTERISTIC = "readDescriptorForCharacteristic",
     READ_DESCRIPTOR_FOR_SERVICE = "readDescriptorForService",
     READ_DESCRIPTOR_FOR_DEVICE = "readDescriptorForDevice",
+    WRITE_DESCRIPTOR = "writeDescriptor",
+    WRITE_DESCRIPTOR_FOR_CHARACTERISTIC = "writeDescriptorForCharacteristic",
+    WRITE_DESCRIPTOR_FOR_SERVICE = "writeDescriptorForService",
+    WRITE_DESCRIPTOR_FOR_DEVICE = "writeDescriptorForDevice",
 }
 
 export class Bridge {
@@ -118,7 +122,7 @@ export class Bridge {
                                 value: {
                                     id: connectResult.id,
                                     name: connectResult.name ? connectResult.name : null
-                                 }
+                                }
                             })
                         }
                         break
@@ -352,6 +356,78 @@ export class Bridge {
                             readDescriptorForDeviceArgs.arguments.transactionId
                         )
                         this.callbackErrorOrValue(args.callbackId, readDescriptorForDeviceResult)
+                        break
+                    case MethodName.WRITE_DESCRIPTOR:
+                        const writeDescriptorArgs = args as MethodCallArguments & {
+                            arguments: {
+                                descriptorId: number,
+                                transactionId: string,
+                                value: Base64,
+                            }
+                        }
+                        const writeDescriptorResult = await this.manager.writeDescriptor(
+                            writeDescriptorArgs.arguments.descriptorId,
+                            writeDescriptorArgs.arguments.value,
+                            writeDescriptorArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, writeDescriptorResult)
+                        break
+                    case MethodName.WRITE_DESCRIPTOR_FOR_CHARACTERISTIC:
+                        const writeDescriptorForCharacteristicArgs = args as MethodCallArguments & {
+                            arguments: {
+                                characteristicId: number,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                                value: Base64,
+                            }
+                        }
+                        const writeDescriptorForCharacteristicResult = await this.manager.writeDescriptorForCharacteristic(
+                            writeDescriptorForCharacteristicArgs.arguments.characteristicId,
+                            writeDescriptorForCharacteristicArgs.arguments.descriptorUuid,
+                            writeDescriptorForCharacteristicArgs.arguments.value,
+                            writeDescriptorForCharacteristicArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, writeDescriptorForCharacteristicResult)
+                        break
+                    case MethodName.WRITE_DESCRIPTOR_FOR_SERVICE:
+                        const writeDescriptorForServiceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                serviceId: number,
+                                characteristicUuid: UUID,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                                value: Base64,
+                            }
+                        }
+                        const writeDescriptorForServiceResult = await this.manager.writeDescriptorForService(
+                            writeDescriptorForServiceArgs.arguments.serviceId,
+                            writeDescriptorForServiceArgs.arguments.characteristicUuid,
+                            writeDescriptorForServiceArgs.arguments.descriptorUuid,
+                            writeDescriptorForServiceArgs.arguments.value,
+                            writeDescriptorForServiceArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, writeDescriptorForServiceResult)
+                        break
+                    case MethodName.WRITE_DESCRIPTOR_FOR_DEVICE:
+                        const writeDescriptorForDeviceArgs = args as MethodCallArguments & {
+                            arguments: {
+                                identifier: string,
+                                serviceUuid: UUID,
+                                characteristicUuid: UUID,
+                                descriptorUuid: UUID,
+                                transactionId: string,
+                                value: Base64,
+                            }
+                        }
+                        const writeDescriptorForDeviceResult = await this.manager.writeDescriptorForDevice(
+                            writeDescriptorForDeviceArgs.arguments.identifier,
+                            writeDescriptorForDeviceArgs.arguments.serviceUuid,
+                            writeDescriptorForDeviceArgs.arguments.characteristicUuid,
+                            writeDescriptorForDeviceArgs.arguments.descriptorUuid,
+                            writeDescriptorForDeviceArgs.arguments.value,
+                            writeDescriptorForDeviceArgs.arguments.transactionId
+                        )
+                        this.callbackErrorOrValue(args.callbackId, writeDescriptorForDeviceResult)
                         break
                     default:
                         console.log("Uknown method requested")

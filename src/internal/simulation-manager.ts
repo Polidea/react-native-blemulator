@@ -249,4 +249,68 @@ export class SimulationManager {
             this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, descriptorUuid, transactionId
         )
     }
+
+    async writeDescriptorForDevice(
+        peripheralId: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.writeDescriptorForDevice(
+            this.peripheralsById,
+            peripheralId,
+            serviceUuid,
+            characteristicUuid,
+            descriptorUuid,
+            value,
+            transactionId
+        )
+    }
+
+    async writeDescriptorForService(
+        serviceId: number,
+        characteristicUuid: UUID,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.writeDescriptorForService(
+            this.peripherals,
+            serviceId,
+            characteristicUuid,
+            descriptorUuid,
+            value,
+            transactionId
+        )
+    }
+
+    async writeDescriptorForCharacteristic(
+        characteristicId: number,
+        descriptorUuid: UUID,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.writeDescriptorForCharacteristic(
+            this.peripherals,
+            characteristicId,
+            descriptorUuid,
+            value,
+            transactionId
+        )
+    }
+
+    async writeDescriptor(
+        descriptorId: number,
+        value: Base64,
+        transactionId: string
+    ): Promise<TransferDescriptor | SimulatedBleError> {
+        return this.descriptorsDelegate.writeDescriptor(
+            this.peripherals,
+            descriptorId,
+            value,
+            transactionId
+        )
+    }
 }
