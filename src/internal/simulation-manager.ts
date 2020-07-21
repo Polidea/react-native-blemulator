@@ -72,6 +72,16 @@ export class SimulationManager {
         return this.scanDelegate.stopScan()
     }
 
+    getKnownDevices(peripheralIds: Array<string>): Array<SimulatedPeripheral> {
+        const result: Array<SimulatedPeripheral> = new Array()
+        peripheralIds.forEach((id) => {
+            if (this.peripheralsById.has(id)) {
+                result.push(this.peripheralsById.get(id)!)
+            }
+        })
+        return result
+    }
+
     async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | SimulatedPeripheral> {
         return this.connectionDelegate.connect(this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralIdentifier, requestMtu)

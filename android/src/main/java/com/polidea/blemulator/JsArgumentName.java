@@ -14,6 +14,8 @@ public interface JsArgumentName {
     String TIMEOUT = "timeout";
     String MTU = "mtu";
 
+    String DEVICE_IDS = "deviceIds";
+
     String SERVICE_ID = "serviceId";
     String SERVICE_UUID = "serviceUuid";
     String CHARACTERISTIC_ID = "characteristicId";

@@ -33,6 +33,7 @@ enum MethodName {
     GET_CURRENT_STATE = "getCurrentState",
     START_SCAN = "startScan",
     STOP_SCAN = "stopScan",
+    GET_KNOWN_DEVICES = "getKnownDevices",
     CONNECT = "connect",
     DISCONNECT = "disconnect",
     IS_DEVICE_CONNECTED = "isDeviceConnected",
@@ -105,6 +106,24 @@ export class Bridge {
                     case MethodName.STOP_SCAN:
                         this.manager.stopScan()
                         blemulatorModule.handleReturnCall(args.callbackId, {})
+                        break
+                    case MethodName.GET_KNOWN_DEVICES:
+                        const getKnownDevicesArgs = args as MethodCallArguments & {
+                            arguments: {
+                                deviceIds: Array<string>,
+                            }
+                        }
+                        const result: Array<SimulatedPeripheral> = this.manager.getKnownDevices(getKnownDevicesArgs.arguments.deviceIds)
+                        blemulatorModule.handleReturnCall(args.callbackId, {
+                            value: result.map(
+                                (peripheral) => {
+                                    return {
+                                        id: peripheral.id,
+                                        name: peripheral.name
+                                    }
+                                }
+                            )
+                        })
                         break
                     case MethodName.CONNECT:
                         const connectArgs = args as MethodCallArguments & {
