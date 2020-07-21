@@ -13,6 +13,7 @@ public interface JsArgumentName {
     String REFRESH_GATT = "refreshGatt";
     String TIMEOUT = "timeout";
     String MTU = "mtu";
+    String CONNECTION_PRIORITY = "connectionPriority";
 
     String SERVICE_ID = "serviceId";
     String SERVICE_UUID = "serviceUuid";

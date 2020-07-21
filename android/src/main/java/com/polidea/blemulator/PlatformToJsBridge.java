@@ -191,11 +191,34 @@ public class PlatformToJsBridge {
         });
     }
 
+    public void requestConnectionPriorityForDevice(String deviceIdentifier,
+                                                   int connectionPriority,
+                                                   String transactionId,
+                                                   final OnSuccessCallback<Device> onSuccessCallback,
+                                                   final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putInt(JsArgumentName.CONNECTION_PRIORITY, connectionPriority);
+
+        callMethod(MethodName.REQUEST_CONNECTION_PRIORITY,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(deviceParser.parseDevice(args.getMap(NativeArgumentName.VALUE)));
+                        }
+                    }
+                });
+    }
+
     public void requestMtu(final String deviceIdentifier,
                            final int mtu,
                            final OnSuccessCallback<Integer> onSuccessCallback,
                            final OnErrorCallback onErrorCallback) {
-
         WritableMap arguments = Arguments.createMap();
         arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
         arguments.putInt(JsArgumentName.MTU, mtu);

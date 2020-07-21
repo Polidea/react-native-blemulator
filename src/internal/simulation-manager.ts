@@ -18,7 +18,7 @@ export class SimulationManager {
     private peripherals: Array<SimulatedPeripheral> = []
     private peripheralsById: Map<string, SimulatedPeripheral> = new Map<string, SimulatedPeripheral>()
     private scanDelegate: ScanDelegate = new ScanDelegate()
-    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate()
+    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate(() => this.getAdapterState())
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
     private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState())
@@ -90,6 +90,18 @@ export class SimulationManager {
         );
     }
 
+    async requestConnectionPriority(peripheralId: string,
+        connectionPriority: number,
+        transactionId: string
+    ): Promise<SimulatedBleError | SimulatedPeripheral> {
+        return this.connectionDelegate.requestConnectionPriority(
+            this.peripheralsById,
+            peripheralId,
+            connectionPriority,
+            transactionId
+        )
+    }
+
     async enable(): Promise<SimulatedBleError | undefined> {
         let result = this.adapterStateDelegate.enable()
         this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
@@ -103,7 +115,12 @@ export class SimulationManager {
     }
 
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
-        return this.mtuDelegate.requestMtu(this.adapterStateDelegate.getAdapterState(), this.peripheralsById, peripheralIdentifier, mtu)
+        return this.mtuDelegate.requestMtu(
+            this.adapterStateDelegate.getAdapterState(),
+            this.peripheralsById,
+            peripheralIdentifier,
+            mtu
+        )
     }
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {

@@ -37,6 +37,7 @@ enum MethodName {
     DISCONNECT = "disconnect",
     IS_DEVICE_CONNECTED = "isDeviceConnected",
     REQUEST_MTU = "requestMtu",
+    REQUEST_CONNECTION_PRIORITY = "requestConnectionPriority",
     DISCOVERY = "discovery",
     READ_CHARACTERISTIC = "readCharacteristic",
     READ_CHARACTERISTIC_FOR_SERVICE = "readCharacteristicForService",
@@ -153,6 +154,31 @@ export class Bridge {
                         const requestMtuArgs = args as MethodCallArguments & { arguments: { identifier: string, mtu: number } }
                         mtuResult = await this.manager.requestMtu(requestMtuArgs.arguments.identifier, requestMtuArgs.arguments.mtu)
                         this.callbackErrorOrValue(args.callbackId, mtuResult)
+                        break
+                    case MethodName.REQUEST_CONNECTION_PRIORITY:
+                        const requestConnectionPriorityArgs = args as MethodCallArguments & {
+                            arguments: {
+                                identifier: string,
+                                connectionPriority: number,
+                                transactionId: string,
+                            }
+                        }
+                        const requestConnectionPriorityResult: SimulatedBleError | SimulatedPeripheral
+                            = await this.manager.requestConnectionPriority(
+                                requestConnectionPriorityArgs.arguments.identifier,
+                                requestConnectionPriorityArgs.arguments.connectionPriority,
+                                requestConnectionPriorityArgs.arguments.transactionId
+                            )
+                        if (requestConnectionPriorityResult instanceof SimulatedBleError) {
+                            blemulatorModule.handleReturnCall(args.callbackId, { error: requestConnectionPriorityResult })
+                        } else {
+                            blemulatorModule.handleReturnCall(args.callbackId, {
+                                value: {
+                                    id: requestConnectionPriorityResult.id,
+                                    name: requestConnectionPriorityResult.name
+                                }
+                            })
+                        }
                         break
                     case MethodName.READ_CHARACTERISTIC:
                         const readCharacteristicArgs = args as MethodCallArguments & {

@@ -100,13 +100,15 @@ export class SimulatedPeripheral {
         this._isDiscoveryDone = true
     }
 
-    async onRequestMtu(requestedMtu: number ): Promise<number> {
+    async onRequestMtu(requestedMtu: number): Promise<number> {
         if (Platform.OS === "android") {
             this.mtu = this.negotiateMtu(requestedMtu);
         }
         this._isMtuNegotiated = true
         return this.mtu;
     }
+
+    async onConnectionPriorityRequested(connectionPriority: number): Promise<void> {}
 
     getMtu(): number {
         return this.mtu
@@ -116,7 +118,7 @@ export class SimulatedPeripheral {
         let negotiatedMtu: number = Math.max(MIN_MTU, requestedMtu);
         negotiatedMtu = Math.min(MAX_MTU, negotiatedMtu);
         return negotiatedMtu;
-      }
+    }
 
     listenToConnectionStateChanges(listener: ConnectionStateListener): Subscription {
         let id = IdGenerator.nextId()

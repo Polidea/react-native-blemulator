@@ -140,8 +140,19 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void requestConnectionPriorityForDevice(String deviceIdentifier, int connectionPriority, String transactionId, OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void requestConnectionPriorityForDevice(String deviceIdentifier,
+                                                   int connectionPriority,
+                                                   String transactionId,
+                                                   OnSuccessCallback<Device> onSuccessCallback,
+                                                   OnErrorCallback onErrorCallback) {
         Log.i(TAG, "requestConnectionPriorityForDevice called");
+        bridge.requestConnectionPriorityForDevice(
+                deviceIdentifier,
+                connectionPriority,
+                transactionId,
+                onSuccessCallback,
+                onErrorCallback
+        );
     }
 
     @Override
@@ -150,7 +161,10 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void requestMTUForDevice(final String deviceIdentifier, int mtu, String transactionId, final OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void requestMTUForDevice(final String deviceIdentifier,
+                                    int mtu, String transactionId,
+                                    final OnSuccessCallback<Device> onSuccessCallback,
+                                    OnErrorCallback onErrorCallback) {
         Log.i(TAG, "requestMTUForDevice called, mtu: " + mtu);
         OnSuccessCallback<Integer> modifiedOnSuccessCallback = new OnSuccessCallback<Integer>() {
             @Override
@@ -164,12 +178,16 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void getKnownDevices(String[] deviceIdentifiers, OnSuccessCallback<Device[]> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void getKnownDevices(String[] deviceIdentifiers,
+                                OnSuccessCallback<Device[]> onSuccessCallback,
+                                OnErrorCallback onErrorCallback) {
         Log.i(TAG, "getKnownDevices called");
     }
 
     @Override
-    public void getConnectedDevices(String[] serviceUUIDs, OnSuccessCallback<Device[]> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void getConnectedDevices(String[] serviceUUIDs,
+                                    OnSuccessCallback<Device[]> onSuccessCallback,
+                                    OnErrorCallback onErrorCallback) {
         Log.i(TAG, "getConnectedDevices called");
     }
 
