@@ -482,6 +482,82 @@ public class PlatformToJsBridge {
         );
     }
 
+    public void writeDescriptorForDevice(String deviceId,
+                                         String serviceUUID,
+                                         String characteristicUUID,
+                                         String descriptorUUID,
+                                         String valueBase64,
+                                         String transactionId,
+                                         OnSuccessCallback<Descriptor> successCallback,
+                                         OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceId);
+        arguments.putString(JsArgumentName.SERVICE_UUID, serviceUUID);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+
+        callMethod(MethodName.WRITE_DESCRIPTOR_FOR_DEVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void writeDescriptorForService(int serviceIdentifier,
+                                          String characteristicUUID,
+                                          String descriptorUUID,
+                                          String valueBase64,
+                                          String transactionId,
+                                          OnSuccessCallback<Descriptor> successCallback,
+                                          OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.SERVICE_ID, serviceIdentifier);
+        arguments.putString(JsArgumentName.CHARACTERISTIC_UUID, characteristicUUID);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+
+        callMethod(MethodName.WRITE_DESCRIPTOR_FOR_SERVICE,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void writeDescriptorForCharacteristic(int characteristicIdentifier,
+                                                 String descriptorUUID,
+                                                 String valueBase64,
+                                                 String transactionId,
+                                                 OnSuccessCallback<Descriptor> successCallback,
+                                                 OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.CHARACTERISTIC_ID, characteristicIdentifier);
+        arguments.putString(JsArgumentName.DESCRIPTOR_UUID, descriptorUUID);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+
+        callMethod(MethodName.WRITE_DESCRIPTOR_FOR_CHARACTERISTIC,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void writeDescriptor(int descriptorIdentifier,
+                                String valueBase64,
+                                String transactionId,
+                                OnSuccessCallback<Descriptor> successCallback,
+                                OnErrorCallback errorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putInt(JsArgumentName.DESCRIPTOR_ID, descriptorIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+        arguments.putString(JsArgumentName.VALUE, valueBase64);
+
+        callMethod(MethodName.WRITE_DESCRIPTOR,
+                arguments,
+                createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
     private JsCallHandler.Callback createCallbackReturningDescriptorOrError(
             final OnSuccessCallback<Descriptor> successCallback,
             final OnErrorCallback errorCallback

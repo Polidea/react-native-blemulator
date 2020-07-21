@@ -34,4 +34,10 @@ public interface MethodName {
     String READ_DESCRIPTOR_FOR_CHARACTERISTIC = "readDescriptorForCharacteristic";
     String READ_DESCRIPTOR_FOR_SERVICE = "readDescriptorForService";
     String READ_DESCRIPTOR_FOR_DEVICE = "readDescriptorForDevice";
+
+    String WRITE_DESCRIPTOR = "writeDescriptor";
+    String WRITE_DESCRIPTOR_FOR_CHARACTERISTIC = "writeDescriptorForCharacteristic";
+    String WRITE_DESCRIPTOR_FOR_SERVICE = "writeDescriptorForService";
+    String WRITE_DESCRIPTOR_FOR_DEVICE = "writeDescriptorForDevice";
+
 }

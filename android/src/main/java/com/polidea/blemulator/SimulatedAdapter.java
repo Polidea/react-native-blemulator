@@ -525,23 +525,79 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void writeDescriptorForDevice(String deviceId, String serviceUUID, String characteristicUUID, String descriptorUUID, String valueBase64, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void writeDescriptorForDevice(String deviceId,
+                                         String serviceUUID,
+                                         String characteristicUUID,
+                                         String descriptorUUID,
+                                         String valueBase64,
+                                         String transactionId,
+                                         OnSuccessCallback<Descriptor> successCallback,
+                                         OnErrorCallback errorCallback) {
         Log.i(TAG, "writeDescriptorForDevice called");
+        bridge.writeDescriptorForDevice(
+                deviceId,
+                serviceUUID,
+                characteristicUUID,
+                descriptorUUID,
+                valueBase64,
+                transactionId,
+                successCallback,
+                errorCallback
+        );
     }
 
     @Override
-    public void writeDescriptorForService(int serviceIdentifier, String characteristicUUID, String descriptorUUID, String valueBase64, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void writeDescriptorForService(int serviceIdentifier,
+                                          String characteristicUUID,
+                                          String descriptorUUID,
+                                          String valueBase64,
+                                          String transactionId,
+                                          OnSuccessCallback<Descriptor> successCallback,
+                                          OnErrorCallback errorCallback) {
         Log.i(TAG, "writeDescriptorForService called");
+        bridge.writeDescriptorForService(
+                serviceIdentifier,
+                characteristicUUID,
+                descriptorUUID,
+                valueBase64,
+                transactionId,
+                successCallback,
+                errorCallback
+        );
     }
 
     @Override
-    public void writeDescriptorForCharacteristic(int characteristicIdentifier, String descriptorUUID, String valueBase64, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void writeDescriptorForCharacteristic(int characteristicIdentifier,
+                                                 String descriptorUUID,
+                                                 String valueBase64,
+                                                 String transactionId,
+                                                 OnSuccessCallback<Descriptor> successCallback,
+                                                 OnErrorCallback errorCallback) {
         Log.i(TAG, "writeDescriptorForCharacteristic called");
+        bridge.writeDescriptorForCharacteristic(
+                characteristicIdentifier,
+                descriptorUUID,
+                valueBase64,
+                transactionId,
+                successCallback,
+                errorCallback
+        );
     }
 
     @Override
-    public void writeDescriptor(int descriptorIdentifier, String valueBase64, String transactionId, OnSuccessCallback<Descriptor> successCallback, OnErrorCallback errorCallback) {
+    public void writeDescriptor(int descriptorIdentifier,
+                                String valueBase64,
+                                String transactionId,
+                                OnSuccessCallback<Descriptor> successCallback,
+                                OnErrorCallback errorCallback) {
         Log.i(TAG, "writeDescriptor called");
+        bridge.writeDescriptor(
+                descriptorIdentifier,
+                valueBase64,
+                transactionId,
+                successCallback,
+                errorCallback
+        );
     }
 
     @Override
