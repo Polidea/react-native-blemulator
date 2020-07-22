@@ -1,15 +1,21 @@
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfUnknown, errorIfConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported } from "../error_creator";
+import { errorIfUnknown, errorIfConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported, errorIfPeripheralNotConnected, errorIfPeripheralDisconnected } from "../error_creator";
 import { AdapterState, ConnectionState, Subscription } from "../../types";
 import { Platform } from 'react-native';
 import { MAX_iOS_MTU } from './mtu-delegate'
+import { mapErrorToSimulatedBleError } from "../utils";
 
 
 export class ConnectionDelegate {
     private connectionStatePublisher: ((id: string, state: ConnectionState) => void) | undefined = undefined
     private connectionStateSubscriptions: Map<string, Subscription> = new Map()
     private pendingDisconnections: Map<string, boolean> = new Map()
+    private getAdapterState: () => AdapterState
+
+    constructor(getAdapterState: () => AdapterState) {
+        this.getAdapterState = getAdapterState
+    }
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => void) {
         this.connectionStatePublisher = publisher
@@ -89,7 +95,6 @@ export class ConnectionDelegate {
             } else {
                 this.pendingDisconnections.set(peripheralIdentifier, true)
             }
-
         } catch (error) {
             if (error instanceof SimulatedBleError)
                 return error
@@ -101,8 +106,8 @@ export class ConnectionDelegate {
 
     async isConnected(adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
-        peripheralIdentifier: string): Promise<boolean | SimulatedBleError> {
-
+        peripheralIdentifier: string
+    ): Promise<boolean | SimulatedBleError> {
         try {
             errorIfBluetoothNotSupported(adapterState)
             errorIfBluetoothNotOn(adapterState)
@@ -115,6 +120,33 @@ export class ConnectionDelegate {
                 console.error(error)
                 return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
             }
+        }
+    }
+
+    async requestConnectionPriority(
+        peripherals: Map<string, SimulatedPeripheral>,
+        peripheralId: string,
+        connectionPriority: number,
+        transactionId: string
+    ): Promise<SimulatedBleError | SimulatedPeripheral> {
+        try {
+            const peripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
+
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
+            errorIfUnknown(peripherals, peripheralId)
+            errorIfPeripheralNotConnected(peripheral!)
+
+            if (Platform.OS === 'android') {
+                await peripheral!.onConnectionPriorityRequested(connectionPriority)
+            }
+
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
+            errorIfPeripheralDisconnected(peripheral!)
+            return peripheral!
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
         }
     }
 }

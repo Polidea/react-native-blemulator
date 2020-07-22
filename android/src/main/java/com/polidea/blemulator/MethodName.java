@@ -14,6 +14,7 @@ public interface MethodName {
     String CANCEL_CONNECTION_OR_DISCONNECT = "disconnect";
     String IS_DEVICE_CONNECTED = "isDeviceConnected";
 
+    String REQUEST_CONNECTION_PRIORITY = "requestConnectionPriority";
     String REQUEST_MTU = "requestMtu";
 
     String GET_KNOWN_DEVICES = "getKnownDevices";
