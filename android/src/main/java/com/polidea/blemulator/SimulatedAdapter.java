@@ -190,6 +190,7 @@ public class SimulatedAdapter implements BleAdapter {
                                     OnSuccessCallback<Device[]> onSuccessCallback,
                                     OnErrorCallback onErrorCallback) {
         Log.i(TAG, "getConnectedDevices called");
+        bridge.getConnectedDevices(serviceUUIDs, onSuccessCallback, onErrorCallback);
     }
 
     @Override

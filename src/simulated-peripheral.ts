@@ -152,6 +152,10 @@ export class SimulatedPeripheral {
         return this.servicesById.get(id)
     }
 
+    getServiceByUuid(uuid: UUID): SimulatedService | undefined {
+        return this.servicesByUuid.get(uuid)
+    }
+
     getCharacteristic(id: number): SimulatedCharacteristic | undefined {
         return this.characteristicsById.get(id)
     }

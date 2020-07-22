@@ -82,6 +82,19 @@ export class SimulationManager {
         return result
     }
 
+    getConnectedDevices(serviceUuids: Array<UUID>): Array<SimulatedPeripheral> {
+        const result: Map<string, SimulatedPeripheral> = new Map()
+        this.peripherals.forEach((peripheral) => {
+            serviceUuids.forEach((serviceUuid) => {
+                if (peripheral.getServiceByUuid(serviceUuid) != null) {
+                    result.set(peripheral.id, peripheral)
+                }
+            })
+        })
+
+        return Array.from(result.values())
+    }
+
     async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | SimulatedPeripheral> {
         return this.connectionDelegate.connect(this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralIdentifier, requestMtu)
