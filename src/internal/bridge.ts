@@ -255,7 +255,15 @@ export class Bridge {
                 serviceUuids: Array<UUID>
             }
         }
-        this.manager.getConnectedDevices(getConnectedDevicesArguments.arguments.serviceUuids)
+        const value = this.manager.getConnectedDevices(getConnectedDevicesArguments.arguments.serviceUuids)
+        blemulatorModule.handleReturnCall(args.callbackId, {
+            value: value.map((peripheral) => {
+                return {
+                    id: peripheral.id,
+                    name: peripheral.name
+                }
+            })
+        })
     }
 
     private async connect(args: MethodCallArguments) {
@@ -273,7 +281,7 @@ export class Bridge {
             blemulatorModule.handleReturnCall(args.callbackId, {
                 value: {
                     id: connectResult.id,
-                    name: connectResult.name ? connectResult.name : null
+                    name: connectResult.name
                 }
             })
         }
