@@ -164,8 +164,11 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void getKnownDevices(String[] deviceIdentifiers, OnSuccessCallback<Device[]> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void getKnownDevices(String[] deviceIdentifiers,
+                                OnSuccessCallback<Device[]> onSuccessCallback,
+                                OnErrorCallback onErrorCallback) {
         Log.i(TAG, "getKnownDevices called");
+        bridge.getKnownDevices(deviceIdentifiers, onSuccessCallback, onErrorCallback);
     }
 
     @Override

@@ -5,6 +5,7 @@ import android.util.Log;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.polidea.blemulator.containers.CachedService;
@@ -127,6 +128,32 @@ public class PlatformToJsBridge {
                 //TODO can this throw errors? If so they'll be passed in the callback
             }
         });
+    }
+
+    public void getKnownDevices(String[] deviceIdentifiers,
+                                final OnSuccessCallback<Device[]> onSuccessCallback,
+                                final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        WritableArray deviceIds = Arguments.createArray();
+        for (String deviceIdentifier : deviceIdentifiers) {
+            deviceIds.pushString(deviceIdentifier);
+        }
+        arguments.putArray(JsArgumentName.DEVICE_IDS, deviceIds);
+
+        callMethod(
+                MethodName.GET_KNOWN_DEVICES,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(deviceParser.parseDevices(args.getArray(NativeArgumentName.VALUE)));
+                        }
+                    }
+                }
+        );
     }
 
     public void connect(String deviceIdentifier,
