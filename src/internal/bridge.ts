@@ -77,107 +77,109 @@ export class Bridge {
         const emitter: NativeEventEmitter = new NativeEventEmitter(blemulatorModule)
         this.emitterSubscription = emitter.addListener(
             _METHOD_CALL_EVENT,
-            (args: MethodCallArguments) => {
-                console.log(`Requested method: ${args.methodName}`)
-                switch (args.methodName) {
-                    case MethodName.CREATE_CLIENT:
-                        this.createClient(args)
-                        break
-                    case MethodName.DESTROY_CLIENT:
-                        this.destroyClient(args)
-                        break
-                    case MethodName.ENABLE:
-                        this.enable(args)
-                        break
-                    case MethodName.DISABLE:
-                        this.disable(args)
-                        break
-                    case MethodName.START_SCAN:
-                        this.startScan(args)
-                        break
-                    case MethodName.STOP_SCAN:
-                        this.stopScan(args)
-                        break
-                    case MethodName.GET_KNOWN_DEVICES:
-                        this.getKnownDevices(args)
-                        break
-                    case MethodName.GET_CONNECTED_DEVICED:
-                        this.getConnectedDevices(args)
-                        break
-                    case MethodName.CONNECT:
-                        this.connect(args)
-                        break
-                    case MethodName.DISCONNECT:
-                        this.disconnect(args)
-                        break
-                    case MethodName.DISCOVERY:
-                        this.discovery(args)
-                        break
-                    case MethodName.IS_DEVICE_CONNECTED:
-                        this.isDeviceConnected(args)
-                        break
-                    case MethodName.REQUEST_MTU:
-                        this.requestMtu(args)
-                        break
-                    case MethodName.REQUEST_CONNECTION_PRIORITY:
-                        this.requestConnectionPriority(args)
-                        break
-                    case MethodName.READ_CHARACTERISTIC:
-                        this.readCharacteristic(args)
-                        break
-                    case MethodName.READ_CHARACTERISTIC_FOR_SERVICE:
-                        this.readCharacteristicForService(args)
-                        break
-                    case MethodName.READ_CHARACTERISTIC_FOR_DEVICE:
-                        this.readCharacteristicForDevice(args)
-                        break
-                    case MethodName.WRITE_CHARACTERISTIC:
-                        this.writeCharacteristic(args)
-                        break
-                    case MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE:
-                        this.writeCharacteristicForService(args)
-                        break
-                    case MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE:
-                        this.writeCharacteristicForDevice(args)
-                        break
-                    case MethodName.MONITOR_CHARACTERISTIC:
-                        this.monitorCharacteristic(args)
-                        break
-                    case MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE:
-                        this.monitorCharacteristicForService(args)
-                        break
-                    case MethodName.MONITOR_CHARACTERISTIC_FOR_DEVICE:
-                        this.monitorCharacteristicForDevice(args)
-                        break
-                    case MethodName.READ_DESCRIPTOR:
-                        this.readDescriptor(args)
-                        break
-                    case MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC:
-                        this.readDescriptorForCharacteristic(args)
-                        break
-                    case MethodName.READ_DESCRIPTOR_FOR_SERVICE:
-                        this.readDescriptorForService(args)
-                        break
-                    case MethodName.READ_DESCRIPTOR_FOR_DEVICE:
-                        this.readDescriptorForDevice(args)
-                        break
-                    case MethodName.WRITE_DESCRIPTOR:
-                        this.writeDescriptor(args)
-                        break
-                    case MethodName.WRITE_DESCRIPTOR_FOR_CHARACTERISTIC:
-                        this.writeDescriptorForCharacteristic(args)
-                        break
-                    case MethodName.WRITE_DESCRIPTOR_FOR_SERVICE:
-                        this.writeDescriptorForService(args)
-                        break
-                    case MethodName.WRITE_DESCRIPTOR_FOR_DEVICE:
-                        this.writeDescriptorForDevice(args)
-                        break
-                    default:
-                        console.error("Uknown method requested")
-                }
-            },
+            (args: MethodCallArguments) => { this.handleMethodCall(args) }
         )
+    }
+
+    private handleMethodCall(args: MethodCallArguments) {
+        console.log(`Requested method: ${args.methodName}`)
+        switch (args.methodName) {
+            case MethodName.CREATE_CLIENT:
+                this.createClient(args)
+                break
+            case MethodName.DESTROY_CLIENT:
+                this.destroyClient(args)
+                break
+            case MethodName.ENABLE:
+                this.enable(args)
+                break
+            case MethodName.DISABLE:
+                this.disable(args)
+                break
+            case MethodName.START_SCAN:
+                this.startScan(args)
+                break
+            case MethodName.STOP_SCAN:
+                this.stopScan(args)
+                break
+            case MethodName.GET_KNOWN_DEVICES:
+                this.getKnownDevices(args)
+                break
+            case MethodName.GET_CONNECTED_DEVICED:
+                this.getConnectedDevices(args)
+                break
+            case MethodName.CONNECT:
+                this.connect(args)
+                break
+            case MethodName.DISCONNECT:
+                this.disconnect(args)
+                break
+            case MethodName.DISCOVERY:
+                this.discovery(args)
+                break
+            case MethodName.IS_DEVICE_CONNECTED:
+                this.isDeviceConnected(args)
+                break
+            case MethodName.REQUEST_MTU:
+                this.requestMtu(args)
+                break
+            case MethodName.REQUEST_CONNECTION_PRIORITY:
+                this.requestConnectionPriority(args)
+                break
+            case MethodName.READ_CHARACTERISTIC:
+                this.readCharacteristic(args)
+                break
+            case MethodName.READ_CHARACTERISTIC_FOR_SERVICE:
+                this.readCharacteristicForService(args)
+                break
+            case MethodName.READ_CHARACTERISTIC_FOR_DEVICE:
+                this.readCharacteristicForDevice(args)
+                break
+            case MethodName.WRITE_CHARACTERISTIC:
+                this.writeCharacteristic(args)
+                break
+            case MethodName.WRITE_CHARACTERISTIC_FOR_SERVICE:
+                this.writeCharacteristicForService(args)
+                break
+            case MethodName.WRITE_CHARACTERISTIC_FOR_DEVICE:
+                this.writeCharacteristicForDevice(args)
+                break
+            case MethodName.MONITOR_CHARACTERISTIC:
+                this.monitorCharacteristic(args)
+                break
+            case MethodName.MONITOR_CHARACTERISTIC_FOR_SERVICE:
+                this.monitorCharacteristicForService(args)
+                break
+            case MethodName.MONITOR_CHARACTERISTIC_FOR_DEVICE:
+                this.monitorCharacteristicForDevice(args)
+                break
+            case MethodName.READ_DESCRIPTOR:
+                this.readDescriptor(args)
+                break
+            case MethodName.READ_DESCRIPTOR_FOR_CHARACTERISTIC:
+                this.readDescriptorForCharacteristic(args)
+                break
+            case MethodName.READ_DESCRIPTOR_FOR_SERVICE:
+                this.readDescriptorForService(args)
+                break
+            case MethodName.READ_DESCRIPTOR_FOR_DEVICE:
+                this.readDescriptorForDevice(args)
+                break
+            case MethodName.WRITE_DESCRIPTOR:
+                this.writeDescriptor(args)
+                break
+            case MethodName.WRITE_DESCRIPTOR_FOR_CHARACTERISTIC:
+                this.writeDescriptorForCharacteristic(args)
+                break
+            case MethodName.WRITE_DESCRIPTOR_FOR_SERVICE:
+                this.writeDescriptorForService(args)
+                break
+            case MethodName.WRITE_DESCRIPTOR_FOR_DEVICE:
+                this.writeDescriptorForDevice(args)
+                break
+            default:
+                console.error("Uknown method requested")
+        }
     }
 
     simulate(): Promise<void> {
@@ -207,9 +209,19 @@ export class Bridge {
     }
 
     private startScan(args: MethodCallArguments) {
-        const scanArgs = args as MethodCallArguments & { arguments: { filteredUuids?: Array<UUID>, scanMode?: number, callbackType?: number } }
-        const error = this.manager.startScan(scanArgs.arguments.filteredUuids, scanArgs.arguments.scanMode, scanArgs.arguments.callbackType,
-            (scanResult) => { blemulatorModule.addScanResult(scanResult) })
+        const scanArgs = args as MethodCallArguments & {
+            arguments: {
+                filteredUuids?: Array<UUID>,
+                scanMode?: number,
+                callbackType?: number
+            }
+        }
+        const error = this.manager.startScan(
+            scanArgs.arguments.filteredUuids,
+            scanArgs.arguments.scanMode,
+            scanArgs.arguments.callbackType,
+            (scanResult) => { blemulatorModule.addScanResult(scanResult) }
+        )
         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
     }
 
