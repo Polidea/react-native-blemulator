@@ -16,6 +16,7 @@ public interface JsArgumentName {
     String CONNECTION_PRIORITY = "connectionPriority";
 
     String DEVICE_IDS = "deviceIds";
+    String SERVICE_UUIDS = "serviceUuids";
 
     String SERVICE_ID = "serviceId";
     String SERVICE_UUID = "serviceUuid";

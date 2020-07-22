@@ -22,7 +22,7 @@ export interface ScanInfo {
 }
 
 export class SimulatedPeripheral {
-    readonly name?: string
+    readonly name: string | null
     readonly id: string
     advertisementInterval: number
     readonly scanInfo: ScanInfo
@@ -43,7 +43,7 @@ export class SimulatedPeripheral {
         this.scanInfo = {
             rssi, txPowerLevel, isConnectable, manufacturerData, serviceUuids, serviceData, solicitedServiceUuids, overflowUuids, localName
         }
-        this.name = name
+        this.name = name ? name : null
         this.id = id
         this.advertisementInterval = advertisementInterval
 
@@ -150,6 +150,10 @@ export class SimulatedPeripheral {
 
     getService(id: number): SimulatedService | undefined {
         return this.servicesById.get(id)
+    }
+
+    getServiceByUuid(uuid: UUID): SimulatedService | undefined {
+        return this.servicesByUuid.get(uuid)
     }
 
     getCharacteristic(id: number): SimulatedCharacteristic | undefined {

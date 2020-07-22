@@ -18,6 +18,7 @@ public interface MethodName {
     String REQUEST_MTU = "requestMtu";
 
     String GET_KNOWN_DEVICES = "getKnownDevices";
+    String GET_CONNECTED_DEVICED = "getConnectedDevices";
 
     String DISCOVERY = "discovery";
 

@@ -156,6 +156,33 @@ public class PlatformToJsBridge {
         );
     }
 
+    public void getConnectedDevices(String[] serviceUUIDs,
+                                    final OnSuccessCallback<Device[]> onSuccessCallback,
+                                    final OnErrorCallback onErrorCallback) {
+        Log.i(TAG, "getConnectedDevices called");
+        WritableMap arguments = Arguments.createMap();
+        WritableArray serviceUuidsArray = Arguments.createArray();
+        for (String serviceUuid : serviceUUIDs) {
+            serviceUuidsArray.pushString(serviceUuid);
+        }
+        arguments.putArray(JsArgumentName.SERVICE_UUIDS, serviceUuidsArray);
+
+        callMethod(
+                MethodName.GET_CONNECTED_DEVICED,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(deviceParser.parseDevices(args.getArray(NativeArgumentName.VALUE)));
+                        }
+                    }
+                }
+        );
+    }
+
     public void connect(String deviceIdentifier,
                         ConnectionOptions connectionOptions,
                         final OnSuccessCallback<Device> onSuccessCallback,
