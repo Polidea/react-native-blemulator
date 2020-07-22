@@ -86,7 +86,7 @@ export class SimulationManager {
         const result: Map<string, SimulatedPeripheral> = new Map()
         this.peripherals.forEach((peripheral) => {
             serviceUuids.forEach((serviceUuid) => {
-                if (peripheral.getServiceByUuid(serviceUuid) != null) {
+                if (peripheral.getServiceByUuid(serviceUuid) != null && peripheral.isConnected()) {
                     result.set(peripheral.id, peripheral)
                 }
             })
