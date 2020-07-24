@@ -10,10 +10,13 @@ import {
     errorIfNotWritableWithResponse,
     errorIfNotWritableWithoutResponse,
     errorChecksAfterOperation,
+    errorIfPayloadTooLarge,
+    errorIfPayloadMalformed,
 } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
-import { findPeripheralWithService, findPeripheralWithCharacteristic, mapErrorToSimulatedBleError } from "../utils";
+import { findPeripheralWithService, findPeripheralWithCharacteristic, mapErrorToSimulatedBleError, trimValueToMtu } from "../utils";
+import { MAX_MTU } from "./mtu-delegate";
 
 export class CharacteristicsDelegate {
     private readonly getAdapterState: () => AdapterState
@@ -140,6 +143,13 @@ export class CharacteristicsDelegate {
         const value: Base64 = await characteristic!.read()
 
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
+        errorIfPayloadTooLarge(
+            value,
+            MAX_MTU,
+            BleErrorCode.CharacteristicReadFailed, {
+            characteristicUuid: characteristic.uuid
+        })
+        errorIfPayloadMalformed(value)
 
         const returnedCharacteristic: TransferCharacteristic
             = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
@@ -232,13 +242,21 @@ export class CharacteristicsDelegate {
         characteristic: SimulatedCharacteristic,
         peripheral: SimulatedPeripheral,
         value: Base64,
-        withResponse: boolean    ): Promise<TransferCharacteristic> {
+        withResponse: boolean
+    ): Promise<TransferCharacteristic> {
         if (withResponse) {
             errorIfNotWritableWithResponse(characteristic)
         } else {
             errorIfNotWritableWithoutResponse(characteristic)
         }
 
+        errorIfPayloadTooLarge(
+            value,
+            MAX_MTU,
+            BleErrorCode.CharacteristicWriteFailed, {
+            characteristicUuid: characteristic.uuid
+        })
+        errorIfPayloadMalformed(value)
         await characteristic.write(value, { withResponse: withResponse, sendNotification: true })
 
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
@@ -319,9 +337,22 @@ export class CharacteristicsDelegate {
         const subscription: Subscription = characteristic.monitor((newValue) => {
             try {
                 errorIfPeripheralDisconnected(matchedPeripheral!)
+                errorIfPayloadTooLarge(
+                    newValue,
+                    matchedPeripheral.getMtu() - 3,
+                    BleErrorCode.DescriptorReadFailed, {
+                    characteristicUuid: characteristic.uuid,
+                    noError: true,
+                })
+                const trimmedNotification = trimValueToMtu(newValue, matchedPeripheral.getMtu() - 3)
+                errorIfPayloadMalformed(trimmedNotification)
                 this.notificationPublisher(
                     transactionId,
-                    mapToTransferCharacteristic(characteristic, matchedPeripheral!.id, newValue)
+                    mapToTransferCharacteristic(
+                        characteristic,
+                        matchedPeripheral!.id,
+                        trimmedNotification
+                    )
                 )
             } catch (error) {
                 this.handleMonitoringError(transactionId, error)

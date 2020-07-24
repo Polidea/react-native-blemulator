@@ -1,7 +1,7 @@
 import { AdapterState, UUID, Base64 } from "../../types";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
 import { TransferDescriptor, mapToTransferDescriptor } from "../internal-types";
-import { SimulatedBleError } from "../../ble-error";
+import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import {
     findPeripheralWithDescriptor,
     mapErrorToSimulatedBleError,
@@ -13,9 +13,12 @@ import {
     errorIfDescriptorNotReadable,
     errorChecksAfterOperation,
     errorIfDescriptorNotFound,
-    errorIfDescriptorNotWritable
+    errorIfDescriptorNotWritable,
+    errorIfPayloadTooLarge,
+    errorIfPayloadMalformed
 } from "../error_creator";
 import { SimulatedDescriptor } from "../../simulated-descriptor";
+import { MAX_MTU } from "./mtu-delegate";
 
 export class DescriptorsDelegate {
     private getAdapterState: () => AdapterState
@@ -104,7 +107,15 @@ export class DescriptorsDelegate {
     ): Promise<TransferDescriptor> {
         errorIfDescriptorNotReadable(descriptor)
         const value: Base64 = await descriptor.read()
+
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
+        errorIfPayloadTooLarge(
+            value,
+            MAX_MTU,
+            BleErrorCode.DescriptorReadFailed, {
+            descriptorUuid: descriptor.uuid
+        })
+        errorIfPayloadMalformed(value)
         const readDescriptor: TransferDescriptor = mapToTransferDescriptor(descriptor, peripheral.id, value)
         return readDescriptor
     }
@@ -192,6 +203,13 @@ export class DescriptorsDelegate {
         descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral, value: Base64
     ): Promise<TransferDescriptor> {
         errorIfDescriptorNotWritable(descriptor)
+        errorIfPayloadTooLarge(
+            value,
+            MAX_MTU,
+            BleErrorCode.DescriptorWriteFailed, {
+            descriptorUuid: descriptor.uuid
+        })
+        errorIfPayloadMalformed(value)
         await descriptor.write(value)
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
         return mapToTransferDescriptor(descriptor, peripheral.id, value)
