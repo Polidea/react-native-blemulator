@@ -156,8 +156,12 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void readRSSIForDevice(String deviceIdentifier, String transactionId, OnSuccessCallback<Device> onSuccessCallback, OnErrorCallback onErrorCallback) {
+    public void readRSSIForDevice(String deviceIdentifier,
+                                  String transactionId,
+                                  OnSuccessCallback<Device> onSuccessCallback,
+                                  OnErrorCallback onErrorCallback) {
         Log.i(TAG, "readRSSIForDevice called");
+        bridge.readRSSIForDevice(deviceIdentifier, transactionId, onSuccessCallback, onErrorCallback);
     }
 
     @Override

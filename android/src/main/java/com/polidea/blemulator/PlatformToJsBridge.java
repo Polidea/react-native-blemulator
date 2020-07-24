@@ -245,6 +245,30 @@ public class PlatformToJsBridge {
         });
     }
 
+    public void readRSSIForDevice(String deviceIdentifier,
+                                  String transactionId,
+                                  final OnSuccessCallback<Device> onSuccessCallback,
+                                  final OnErrorCallback onErrorCallback) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(
+                MethodName.READ_RSSI,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        if (args.hasKey(NativeArgumentName.ERROR)) {
+                            onErrorCallback.onError(errorParser.parseError(args.getMap(NativeArgumentName.ERROR)));
+                        } else {
+                            onSuccessCallback.onSuccess(deviceParser.parseDevice(args.getMap(NativeArgumentName.VALUE)));
+                        }
+                    }
+                }
+        );
+    }
+
     public void requestConnectionPriorityForDevice(String deviceIdentifier,
                                                    int connectionPriority,
                                                    String transactionId,

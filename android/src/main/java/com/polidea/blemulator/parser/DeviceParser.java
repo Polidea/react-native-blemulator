@@ -11,8 +11,13 @@ public class DeviceParser {
     public Device parseDevice(ReadableMap serializedDevice) {
         String id = serializedDevice.getString(NativeArgumentName.ID);
         String name = serializedDevice.getString(NativeArgumentName.NAME);
+        Device result = new Device(id, name);
+        if (serializedDevice.hasKey(NativeArgumentName.RSSI)) {
+            int rssi = serializedDevice.getInt(NativeArgumentName.RSSI);
+            result.setRssi(rssi);
+        }
 
-        return new Device(id, name);
+        return result;
     }
 
     public Device[] parseDevices(ReadableArray serializedDevicesArray) {

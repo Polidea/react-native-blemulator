@@ -14,6 +14,7 @@ public interface MethodName {
     String CANCEL_CONNECTION_OR_DISCONNECT = "disconnect";
     String IS_DEVICE_CONNECTED = "isDeviceConnected";
 
+    String READ_RSSI =  "readRssi";
     String REQUEST_CONNECTION_PRIORITY = "requestConnectionPriority";
     String REQUEST_MTU = "requestMtu";
 

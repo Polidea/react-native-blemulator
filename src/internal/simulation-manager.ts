@@ -11,6 +11,8 @@ import { CharacteristicsDelegate } from './delegates/characteristics-delegate'
 import { TransferCharacteristic, TransferDescriptor } from './internal-types'
 import { MtuDelegate } from './delegates/mtu-delegate'
 import { DescriptorsDelegate } from './delegates/descriptors-delegate'
+import { mapErrorToSimulatedBleError } from './utils'
+import { errorIfBluetoothNotSupported, errorIfBluetoothNotOn, errorIfNotConnected, errorIfUnknown } from './error_creator'
 
 export type ScanResultListener = (scanResult: ScanResult) => void
 
@@ -111,6 +113,18 @@ export class SimulationManager {
             this.peripheralsById,
             peripheralIdentifier
         );
+    }
+
+    async readRssi(peripheralIdentifier: string, transactionId: string): Promise<SimulatedBleError | SimulatedPeripheral> {
+        try {
+            errorIfBluetoothNotSupported(this.adapterStateDelegate.getAdapterState())
+            errorIfBluetoothNotOn(this.adapterStateDelegate.getAdapterState())
+            errorIfUnknown(this.peripheralsById, peripheralIdentifier)
+            errorIfNotConnected(this.peripheralsById, peripheralIdentifier)
+            return this.peripheralsById.get(peripheralIdentifier)!
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        }
     }
 
     async requestConnectionPriority(peripheralId: string,
