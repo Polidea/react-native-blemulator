@@ -38,6 +38,7 @@ enum MethodName {
     CONNECT = "connect",
     DISCONNECT = "disconnect",
     IS_DEVICE_CONNECTED = "isDeviceConnected",
+    READ_RSSI = "readRssi",
     REQUEST_MTU = "requestMtu",
     REQUEST_CONNECTION_PRIORITY = "requestConnectionPriority",
     DISCOVERY = "discovery",
@@ -119,6 +120,9 @@ export class Bridge {
                 break
             case MethodName.IS_DEVICE_CONNECTED:
                 this.isDeviceConnected(args)
+                break
+            case MethodName.READ_RSSI:
+                this.readRssi(args)
                 break
             case MethodName.REQUEST_MTU:
                 this.requestMtu(args)
@@ -297,6 +301,31 @@ export class Bridge {
         const isConnectedArgs = args as MethodCallArguments & { arguments: { identifier: string } }
         let isDeviceConnectedResult = await this.manager.isDeviceConnected(isConnectedArgs.arguments.identifier)
         this.callbackErrorOrValue(args.callbackId, isDeviceConnectedResult)
+    }
+
+    private async readRssi(args: MethodCallArguments) {
+        const readRssiArgs = args as MethodCallArguments & {
+            arguments: {
+                identifier: string,
+                transactionId: string,
+            }
+        }
+
+        const result: SimulatedBleError | SimulatedPeripheral = await this.manager.readRssi(
+            readRssiArgs.arguments.identifier,
+            readRssiArgs.arguments.transactionId
+        )
+        if (result instanceof SimulatedBleError) {
+            blemulatorModule.handleReturnCall(args.callbackId, { error: result })
+        } else {
+            blemulatorModule.handleReturnCall(args.callbackId, {
+                value: {
+                    id: result.id,
+                    name: result.name,
+                    rssi: result.getScanResult().rssi
+                }
+            })
+        }
     }
 
     private async requestConnectionPriority(args: MethodCallArguments) {
