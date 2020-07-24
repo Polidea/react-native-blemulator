@@ -1,6 +1,6 @@
 import { SimulatedPeripheral } from "../simulated-peripheral";
 import { SimulatedBleError, BleErrorCode } from "../ble-error";
-import { AdapterState } from "../types";
+import { AdapterState, Base64, UUID } from "../types";
 import { SimulatedCharacteristic } from "../simulated-characteristic";
 import { SimulatedDescriptor } from "../simulated-descriptor";
 
@@ -232,5 +232,44 @@ export function errorIfDescriptorNotWritable(descriptor: SimulatedDescriptor): v
             descriptorUuid: descriptor.uuid,
         })
         throw error
+    }
+}
+
+export function errorIfPayloadMalformed(value: Base64) {
+    if (value.length % 4 !=0) {
+        const error: Error = new Error('Value is in incorrect format, Base64 string\'s length must be divisible by 4')
+        throw error
+    }
+}
+
+export function errorIfPayloadTooLarge(
+    payload: Base64,
+    mtu: number,
+    errorCode: BleErrorCode,
+    args?: {
+        noError?: boolean
+        descriptorUuid?: UUID,
+        characteristicUuid?: UUID
+    }
+): void {
+    //Base64 encodes 3 bytes on 4 characters, hence the uncertainty
+    const lowerLimit: number = Math.floor(mtu / 3) * 3
+    const upperLimit: number = Math.ceil(mtu / 3) * 3
+
+    const payloadSizeInBytes: number = (payload.length / 4) * 3
+
+    if (payloadSizeInBytes > upperLimit) {
+        console.warn(`Payload's (${payload}) size (${payloadSizeInBytes}) exceeds the limit (${mtu}) for this kind of operation`)
+        if (!args?.noError) {
+            const error: SimulatedBleError = new SimulatedBleError({
+                errorCode: errorCode,
+                message: "Operation failed",
+                descriptorUuid: args?.descriptorUuid,
+                characteristicUuid: args?.characteristicUuid
+            })
+            throw error
+        }
+    } else if (payloadSizeInBytes > lowerLimit) {
+        console.warn(`Payload's (${payload}) size (${payloadSizeInBytes}) might be exceeding the limit (${mtu}) for this kind of operation`)
     }
 }

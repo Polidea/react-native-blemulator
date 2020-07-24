@@ -26,7 +26,7 @@ export class SimulatedPeripheral {
     readonly id: string
     advertisementInterval: number
     readonly scanInfo: ScanInfo
-    mtu: number = DEFAULT_MTU
+    private mtu: number = DEFAULT_MTU
     private servicesById: Map<number, SimulatedService> = new Map<number, SimulatedService>()
     private servicesByUuid: Map<UUID, SimulatedService> = new Map<UUID, SimulatedService>()
     private characteristicsById: Map<number, SimulatedCharacteristic> = new Map<number, SimulatedCharacteristic>()
