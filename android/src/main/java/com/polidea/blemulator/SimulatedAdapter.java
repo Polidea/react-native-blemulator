@@ -40,6 +40,7 @@ public class SimulatedAdapter implements BleAdapter {
     private DeviceManager deviceManager = new DeviceManager();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
     private Map<String, CallbackContainer> monitoringCallbacks = new HashMap<>();
+    private @Constants.BluetoothLogLevel String logLevel = Constants.BluetoothLogLevel.VERBOSE;
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
         this.module = module;
@@ -630,13 +631,14 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void setLogLevel(String logLevel) {
+    public void setLogLevel(@Constants.BluetoothLogLevel String logLevel) {
         Log.i(TAG, "setLogLevel called");
+        this.logLevel = logLevel;
     }
 
     @Override
-    public String getLogLevel() {
+    public @Constants.BluetoothLogLevel String getLogLevel() {
         Log.i(TAG, "getLogLevel called");
-        return null;
+        return logLevel;
     }
 }
