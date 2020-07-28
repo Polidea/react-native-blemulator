@@ -10,7 +10,7 @@ import { SimulatedPeripheral } from "../simulated-peripheral";
 const _METHOD_CALL_EVENT = "MethodCall"
 interface BlemulatorModuleInterface {
     handleReturnCall(callbackId: string, returnValue: { value?: Object, error?: SimulatedBleError }): void
-    addScanResult(scanResult: ScanResult): void
+    addScanResult(scanResult: ScanResult | null, error: SimulatedBleError | null): void
     publishConnectionState(peripheralId: string, connectionState: string): void
     publishAdapterState(state: String): void
     publishCharacteristicNotification(transactionId: string, characteristic: TransferCharacteristic | null, error: SimulatedBleError | null): void
@@ -197,6 +197,7 @@ export class Bridge {
 
     private destroyClient(args: MethodCallArguments) {
         this.manager.setAdapterStatePublisher()
+        this.manager.clearState()
         blemulatorModule.handleReturnCall(args.callbackId, {})
     }
 
@@ -224,7 +225,7 @@ export class Bridge {
             scanArgs.arguments.filteredUuids,
             scanArgs.arguments.scanMode,
             scanArgs.arguments.callbackType,
-            (scanResult) => { blemulatorModule.addScanResult(scanResult) }
+            (scanResult, error) => { blemulatorModule.addScanResult(scanResult, error ? error : null) }
         )
         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
     }

@@ -43,13 +43,6 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @Override
-    public void onCatalystInstanceDestroy() {
-        super.onCatalystInstanceDestroy();
-        deregisterAdapter();
-        init();
-    }
-
-    @Override
     public String getName() {
         return "Blemulator";
     }
@@ -62,6 +55,9 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     public void deregisterAdapter() {
+        if (this.adapter != null) {
+            this.adapter.destroyClient();
+        }
         this.adapter = null;
     }
 
@@ -76,10 +72,10 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void addScanResult(ReadableMap scanResult) {
-        //TODO handle errors (adapter powered off during scan, for example)
+    public void addScanResult(ReadableMap scanResult, ReadableMap serializedError) {
         ScanResult result = ScanResultParser.parse(scanResult);
-        adapter.addScanResult(result);
+        BleError error = serializedError != null ? errorParser.parseError(serializedError) : null;
+        adapter.addScanResult(result, error);
     }
 
     @ReactMethod
@@ -120,6 +116,7 @@ public class BlemulatorModule extends ReactContextBaseJavaModule {
             @Override
             public BleAdapter createAdapter(Context context) {
                 SimulatedAdapter adapter = new SimulatedAdapter(BlemulatorModule.this, jsBridge);
+                deregisterAdapter();
                 return adapter;
             }
         });

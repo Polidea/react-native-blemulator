@@ -2,24 +2,34 @@ import { SimulatedPeripheral } from "../../simulated-peripheral";
 import { AdapterState } from "../../types";
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedService } from "../../simulated-service";
-import { errorIfBluetoothNotOn, errorIfUnknown, errorIfNotConnected, errorIfDisconnected } from "../error_creator";
+import { errorIfBluetoothNotOn, errorIfUnknown, errorIfNotConnected, errorIfDisconnected, errorIfBluetoothNotSupported } from "../error_creator";
+import { mapErrorToSimulatedBleError } from "../utils";
 
 export class DiscoveryDelegate {
-    async discovery(adapterState: AdapterState, peripherals: Map<string, SimulatedPeripheral>, peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
+    private getAdapterState: () => AdapterState
+
+    constructor(getAdapterState: () => AdapterState) {
+        this.getAdapterState = getAdapterState
+    }
+
+    async discovery(
+        peripherals: Map<string, SimulatedPeripheral>,
+        peripheralIdentifier: string
+    ): Promise<SimulatedBleError | Array<SimulatedService>> {
         try {
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralIdentifier)
             errorIfNotConnected(peripherals, peripheralIdentifier)
+            
             await peripherals.get(peripheralIdentifier)?.onDiscovery()
+
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfDisconnected(peripherals, peripheralIdentifier)
             return peripherals.get(peripheralIdentifier)!.getServices()
         } catch (error) {
-            if (error instanceof SimulatedBleError) {
-                return error
-            } else {
-                console.error(error)
-                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
-            }
+            return mapErrorToSimulatedBleError(error)
         }
     }
 }

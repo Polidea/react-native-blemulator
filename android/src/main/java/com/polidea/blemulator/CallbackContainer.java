@@ -1,19 +1,18 @@
 package com.polidea.blemulator;
 
-import com.polidea.multiplatformbleadapter.Characteristic;
 import com.polidea.multiplatformbleadapter.OnErrorCallback;
 import com.polidea.multiplatformbleadapter.OnEventCallback;
 
-public class CallbackContainer {
-    private OnEventCallback<Characteristic> onEventCallback;
+public class CallbackContainer<T> {
+    private OnEventCallback<T> onEventCallback;
     private OnErrorCallback onErrorCallback;
 
-    public CallbackContainer(OnEventCallback<Characteristic> onEventCallback, OnErrorCallback onErrorCallback) {
+    public CallbackContainer(OnEventCallback<T> onEventCallback, OnErrorCallback onErrorCallback) {
         this.onEventCallback = onEventCallback;
         this.onErrorCallback = onErrorCallback;
     }
 
-    public OnEventCallback<Characteristic> getOnEventCallback() {
+    public OnEventCallback<T> getOnEventCallback() {
         return onEventCallback;
     }
 

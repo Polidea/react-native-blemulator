@@ -17,34 +17,32 @@ export class ConnectionDelegate {
         this.getAdapterState = getAdapterState
     }
 
+    onAdapterStateChanged(adapterState: AdapterState, peripherals: Map<string, SimulatedPeripheral>) {
+        if (adapterState !== AdapterState.POWERED_ON) {
+            this.connectionStateSubscriptions.forEach((subscription, peripheralId) => {
+                peripherals.get(peripheralId)?.onDisconnect({ emit: true })
+            })
+        }
+    }
+
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => void) {
         this.connectionStatePublisher = publisher
     }
 
     async connect(
-        adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         requestMtu?: number
     ): Promise<SimulatedBleError | SimulatedPeripheral> {
         try {
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralIdentifier)
             errorIfConnected(peripherals, peripheralIdentifier)
-            const peripheral: SimulatedPeripheral = peripherals.get(peripheralIdentifier) as SimulatedPeripheral
+            const peripheral: SimulatedPeripheral = peripherals.get(peripheralIdentifier)!
             this.pendingDisconnections.set(peripheralIdentifier, false)
 
-            const subscription = peripheral.listenToConnectionStateChanges((state) => {
-                if (this.connectionStatePublisher) {
-                    this.connectionStatePublisher(peripheral.id, state)
-                }
-                if (state === ConnectionState.DISCONNECTED) {
-                    subscription.dispose()
-                    this.connectionStateSubscriptions.delete(peripheralIdentifier)
-                }
-            })
-            this.connectionStateSubscriptions.set(peripheralIdentifier, subscription)
+            this.handleConnectionStateSubscription(peripheral)
 
             const willConnect = await peripheral.onConnectRequest()
             if (!willConnect) {
@@ -56,6 +54,7 @@ export class ConnectionDelegate {
                 errorConnectionFailed(peripheralIdentifier);
             }
             await peripheral.onConnect()
+
             if (Platform.OS === "ios") {
                 await peripheral.onRequestMtu(MAX_iOS_MTU)
             } else if (requestMtu && requestMtu > 0) {
@@ -65,9 +64,17 @@ export class ConnectionDelegate {
                 peripheral.onDisconnect({ emit: true })
                 errorConnectionFailed(peripheralIdentifier);
             }
+
             this.pendingDisconnections.delete(peripheralIdentifier)
+
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
+
             return peripheral
         } catch (error) {
+            if (peripherals.get(peripheralIdentifier)?.isConnected()) {
+                peripherals.get(peripheralIdentifier)?.onDisconnect()
+            }
             if (error instanceof SimulatedBleError)
                 return error
             else {
@@ -80,15 +87,29 @@ export class ConnectionDelegate {
         }
     }
 
+    private handleConnectionStateSubscription(peripheral: SimulatedPeripheral) {
+        const subscription = peripheral.listenToConnectionStateChanges((state) => {
+            if (this.connectionStatePublisher) {
+                this.connectionStatePublisher(peripheral.id, state)
+            }
+
+            if (state === ConnectionState.DISCONNECTED) {
+                subscription.dispose()
+                this.connectionStateSubscriptions.delete(peripheral.id)
+            }
+        })
+
+        this.connectionStateSubscriptions.set(peripheral.id, subscription)
+    }
+
     async disconnect(
-        adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string
     ): Promise<SimulatedBleError | undefined> {
 
         try {
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralIdentifier)
             if (peripherals.get(peripheralIdentifier)?.isConnected) {
                 await peripherals.get(peripheralIdentifier)?.onDisconnect({ emit: true })
@@ -104,13 +125,13 @@ export class ConnectionDelegate {
         }
     }
 
-    async isConnected(adapterState: AdapterState,
+    async isConnected(
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string
     ): Promise<boolean | SimulatedBleError> {
         try {
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralIdentifier)
             return peripherals.get(peripheralIdentifier)!.isConnected()
         } catch (error) {

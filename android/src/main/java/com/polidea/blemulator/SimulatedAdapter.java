@@ -36,10 +36,10 @@ public class SimulatedAdapter implements BleAdapter {
     private @Constants.BluetoothState
     String adapterState = Constants.BluetoothState.UNKNOWN;
     private OnEventCallback<String> onAdapterStateChangeCallback = null;
-    private OnEventCallback<ScanResult> scanResultCallback = null;
+    private CallbackContainer<ScanResult> scanResultCallbackContainer = null;
     private DeviceManager deviceManager = new DeviceManager();
     private Map<String, OnEventCallback<ConnectionState>> connectionStateCallbacks = new HashMap<>();
-    private Map<String, CallbackContainer> monitoringCallbacks = new HashMap<>();
+    private Map<String, CallbackContainer<Characteristic>> monitoringCallbacks = new HashMap<>();
     private @Constants.BluetoothLogLevel String logLevel = Constants.BluetoothLogLevel.VERBOSE;
 
     public SimulatedAdapter(BlemulatorModule module, PlatformToJsBridge bridge) {
@@ -47,9 +47,15 @@ public class SimulatedAdapter implements BleAdapter {
         this.bridge = bridge;
     }
 
-    public void addScanResult(ScanResult scanResult) {
-        if (scanResultCallback != null) {
-            scanResultCallback.onEvent(scanResult);
+    public void addScanResult(ScanResult scanResult, BleError error) {
+        if (error != null) {
+            scanResultCallbackContainer.getOnErrorCallback().onError(error);
+            stopDeviceScan();
+            return;
+        }
+
+        if (scanResultCallbackContainer != null) {
+            scanResultCallbackContainer.getOnEventCallback().onEvent(scanResult);
         }
         deviceManager.addDeviceIfUnknown(scanResult.getDeviceId(), scanResult.getDeviceName());
     }
@@ -123,11 +129,15 @@ public class SimulatedAdapter implements BleAdapter {
     }
 
     @Override
-    public void startDeviceScan(String[] filteredUUIDs, int scanMode, int callbackType, OnEventCallback<ScanResult> onEventCallback, OnErrorCallback onErrorCallback) {
+    public void startDeviceScan(String[] filteredUUIDs,
+                                int scanMode,
+                                int callbackType,
+                                OnEventCallback<ScanResult> onEventCallback,
+                                OnErrorCallback onErrorCallback) {
         Log.i(TAG, "startDeviceScan called");
-        if (scanResultCallback == null) {
+        if (scanResultCallbackContainer == null) {
             bridge.startScan(filteredUUIDs, scanMode, callbackType, onErrorCallback);
-            scanResultCallback = onEventCallback;
+            scanResultCallbackContainer = new CallbackContainer<>(onEventCallback, onErrorCallback);
         } else {
             throw new IllegalStateException("Scan already in progress");
         }
@@ -137,7 +147,7 @@ public class SimulatedAdapter implements BleAdapter {
     public void stopDeviceScan() {
         Log.i(TAG, "stopDeviceScan called");
         bridge.stopScan();
-        scanResultCallback = null;
+        scanResultCallbackContainer = null;
     }
 
     @Override
@@ -261,9 +271,7 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
-        assertDiscoveryDone(deviceContainer);
+        gattAccessAsserts(deviceContainer);
 
         return deviceContainer.getServices();
     }
@@ -274,8 +282,7 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
+        gattAccessAsserts(deviceContainer);
         assertServiceFound(deviceContainer.getCachedService(serviceUUID));
 
         return deviceContainer.getCachedService(serviceUUID).getCharacteristics();
@@ -287,8 +294,7 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
+        gattAccessAsserts(deviceContainer);
         assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
 
         return deviceContainer.getCachedService(serviceIdentifier).getCharacteristics();
@@ -300,8 +306,7 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainer(deviceIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
+        gattAccessAsserts(deviceContainer);
         assertServiceFound(deviceContainer.getCachedService(serviceUUID));
 
         CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceUUID).getCachedCharacteristic(characteristicUUID);
@@ -315,8 +320,7 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(serviceIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
+        gattAccessAsserts(deviceContainer);
         assertServiceFound(deviceContainer.getCachedService(serviceIdentifier));
 
         CachedCharacteristic characteristic = deviceContainer.getCachedService(serviceIdentifier).getCachedCharacteristic(characteristicUUID);
@@ -331,13 +335,32 @@ public class SimulatedAdapter implements BleAdapter {
 
         DeviceContainer deviceContainer = deviceManager.getDeviceContainerForGattId(characteristicIdentifier);
 
-        assertDeviceKnown(deviceContainer);
-        assertDeviceConnected(deviceContainer);
+        gattAccessAsserts(deviceContainer);
 
         CachedCharacteristic characteristic = deviceContainer.getCachedCharacteristic(characteristicIdentifier);
         assertServiceFound(characteristic);
 
         return characteristic.getDescriptors();
+    }
+
+    private void gattAccessAsserts(DeviceContainer deviceContainer) throws BleError {
+        assertBluetoothSupported();
+        assertBluetoothOn();
+        assertDeviceKnown(deviceContainer);
+        assertDeviceConnected(deviceContainer);
+        assertDiscoveryDone(deviceContainer);
+    }
+
+    private void assertBluetoothSupported() throws BleError {
+        if (adapterState.equals(Constants.BluetoothState.UNSUPPORTED)) {
+            throw new BleError(BleErrorCode.BluetoothUnsupported, "BT not supported", UNUSED_ANDROID_ERROR_CODE);
+        }
+    }
+
+    private void assertBluetoothOn() throws BleError {
+        if (!adapterState.equals(Constants.BluetoothState.POWERED_ON)) {
+            throw new BleError(BleErrorCode.BluetoothResetting, "BT not on", UNUSED_ANDROID_ERROR_CODE);
+        }
     }
 
     private void assertDeviceKnown(DeviceContainer deviceContainer) throws BleError {
@@ -498,7 +521,7 @@ public class SimulatedAdapter implements BleAdapter {
             Log.w(TAG, "Monitoring called reusing existing transactionId");
             monitoringCallbacks.get(transactionId).getOnErrorCallback().onError(BleErrorUtils.cancelled());
         }
-        monitoringCallbacks.put(transactionId, new CallbackContainer(onEventCallback, onErrorCallback));
+        monitoringCallbacks.put(transactionId, new CallbackContainer<>(onEventCallback, onErrorCallback));
     }
 
     @Override
