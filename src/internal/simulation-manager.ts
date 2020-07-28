@@ -47,7 +47,6 @@ export class SimulationManager {
 
     setAdapterState(adapterState: AdapterState) {
         this.adapterStateDelegate.setAdapterState(adapterState)
-        this.characteristicsDelegate.onAdapterStateChanged(this.adapterStateDelegate.getAdapterState())
     }
 
     getAdapterState(): AdapterState {
@@ -152,13 +151,11 @@ export class SimulationManager {
 
     async enable(): Promise<SimulatedBleError | undefined> {
         let result = this.adapterStateDelegate.enable()
-        this.characteristicsDelegate.onAdapterStateChanged(this.adapterStateDelegate.getAdapterState())
         return result;
     }
 
     async disable(): Promise<SimulatedBleError | undefined> {
         let result = this.adapterStateDelegate.disable()
-        this.characteristicsDelegate.onAdapterStateChanged(this.adapterStateDelegate.getAdapterState())
         return result
     }
 
