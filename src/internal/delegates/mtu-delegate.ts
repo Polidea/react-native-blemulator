@@ -1,8 +1,9 @@
-import { SimulatedBleError, BleErrorCode } from "../../ble-error";
+import { SimulatedBleError } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfUnknown, errorIfConnected, errorIfNotConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfMtuNegotiated } from "../error_creator";
-import { AdapterState, ConnectionState, Subscription } from "../../types";
+import { errorIfUnknown, errorIfNotConnected, errorIfBluetoothNotOn, errorIfMtuNegotiated, errorIfBluetoothNotSupported } from "../error_creator";
+import { AdapterState } from "../../types";
 import { Platform } from 'react-native';
+import { mapErrorToSimulatedBleError } from "../utils";
 
 export const DEFAULT_MTU = 23
 export const MIN_MTU = 23
@@ -10,15 +11,20 @@ export const MAX_iOS_MTU: number = 185
 export const MAX_MTU = 512
 
 export class MtuDelegate {
-    static readonly myReadOnlyProperty = 1;
+    private getAdapterState: () => AdapterState
+
+    constructor(getAdapterState: () => AdapterState) {
+        this.getAdapterState = getAdapterState
+    }
+
     async requestMtu(
-        adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         mtu: number
     ): Promise<SimulatedBleError | number> {
         try {
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralIdentifier)
             errorIfNotConnected(peripherals, peripheralIdentifier)
             let negotiatedMtu: number
@@ -28,15 +34,13 @@ export class MtuDelegate {
                 errorIfMtuNegotiated(peripherals, peripheralIdentifier)
                 negotiatedMtu = await peripherals.get(peripheralIdentifier)!.onRequestMtu(mtu)
             }
+
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfNotConnected(peripherals, peripheralIdentifier)
             return negotiatedMtu
         } catch (error) {
-            if (error instanceof SimulatedBleError)
-                return error
-            else {
-                console.error(error)
-                return new SimulatedBleError({ errorCode: BleErrorCode.UnknownError, message: error })
-            }
+            return mapErrorToSimulatedBleError(error)
         }
     }
 }

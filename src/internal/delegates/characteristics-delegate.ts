@@ -43,7 +43,7 @@ export class CharacteristicsDelegate {
         this.handlePotentialMonitoringCancellation(transactionId)
     }
 
-    onAdapterStateChange(adapterState: AdapterState) {
+    onAdapterStateChanged(adapterState: AdapterState) {
         if (adapterState != AdapterState.POWERED_ON) {
             const error = new SimulatedBleError({
                 errorCode:
@@ -61,7 +61,6 @@ export class CharacteristicsDelegate {
     }
 
     async readCharacteristic(
-        adapterState: AdapterState,
         peripherals: Array<SimulatedPeripheral>,
         characteristicIdentifier: number
     ): Promise<TransferCharacteristic | SimulatedBleError> {
@@ -69,7 +68,7 @@ export class CharacteristicsDelegate {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic
                 = matchedPeripheral!.getCharacteristic(characteristicIdentifier)!
@@ -84,7 +83,6 @@ export class CharacteristicsDelegate {
     }
 
     async readCharacteristicForService(
-        adapterState: AdapterState,
         peripherals: Array<SimulatedPeripheral>,
         serviceIdentifier: number,
         characteristicUuid: UUID
@@ -93,7 +91,7 @@ export class CharacteristicsDelegate {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceIdentifier)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic | undefined =
                 matchedPeripheral!.getService(serviceIdentifier)?.getCharacteristicByUuid(characteristicUuid)
@@ -109,7 +107,6 @@ export class CharacteristicsDelegate {
     }
 
     async readCharacteristicForDevice(
-        adapterState: AdapterState,
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         serviceUuid: UUID,
@@ -119,7 +116,7 @@ export class CharacteristicsDelegate {
             let matchedPeripheral: SimulatedPeripheral | undefined
                 = peripherals.get(peripheralIdentifier)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic | undefined
                 = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
@@ -264,14 +261,16 @@ export class CharacteristicsDelegate {
         return mapToTransferCharacteristic(characteristic, peripheral.id, value)
     }
 
-    monitorCharacteristic(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>,
-        characteristicId: number, transactionId: string
+    monitorCharacteristic(
+        peripherals: Array<SimulatedPeripheral>,
+        characteristicId: number,
+        transactionId: string
     ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicId)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic
                 = matchedPeripheral!.getCharacteristic(characteristicId)!
@@ -283,14 +282,17 @@ export class CharacteristicsDelegate {
         }
     }
 
-    monitorCharacteristicForService(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>,
-        serviceId: number, characteristicUuid: UUID, transactionId: string
+    monitorCharacteristicForService(
+        peripherals: Array<SimulatedPeripheral>,
+        serviceId: number,
+        characteristicUuid: UUID,
+        transactionId: string
     ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceId)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic | undefined =
                 matchedPeripheral!.getService(serviceId)?.getCharacteristicByUuid(characteristicUuid)
@@ -304,14 +306,17 @@ export class CharacteristicsDelegate {
         }
     }
 
-    monitorCharacteristicForDevice(adapterState: AdapterState,
-        peripherals: Map<string, SimulatedPeripheral>, peripheralId: string,
-        serviceUuid: UUID, characteristicUuid: UUID, transactionId: string
+    monitorCharacteristicForDevice(
+        peripherals: Map<string, SimulatedPeripheral>,
+        peripheralId: string,
+        serviceUuid: UUID,
+        characteristicUuid: UUID,
+        transactionId: string
     ): void {
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
 
-            errorChecksForAccessToGatt(adapterState, matchedPeripheral)
+            errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
 
             let characteristic: SimulatedCharacteristic | undefined
                 = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)

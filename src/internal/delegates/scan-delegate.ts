@@ -3,12 +3,18 @@ import { ScanResultListener } from "../simulation-manager"
 import { SimulatedBleError } from "../../ble-error"
 import { errorIfBluetoothNotOn, errorIfScanInProgress, errorIfBluetoothNotSupported } from "../error_creator"
 import { SimulatedPeripheral } from "../../.."
+import { mapErrorToSimulatedBleError } from "../utils"
 
 export class ScanDelegate {
     private addScanResult: ScanResultListener = () => { }
     private filteredUuids?: Array<UUID> = undefined
     private advertisementIntervalHandles: Array<number> = []
     private isScanInProgress: boolean = false
+    private getAdapterState: () => AdapterState
+
+    constructor(getAdapterState: () => AdapterState) {
+        this.getAdapterState = getAdapterState
+    }
 
     addPeripheral(peripheral: SimulatedPeripheral): void {
         if (this.isScanInProgress) {
@@ -17,11 +23,11 @@ export class ScanDelegate {
         }
     }
 
-    startScan(adapterState: AdapterState, peripherals: Array<SimulatedPeripheral>, filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
+    startScan(peripherals: Array<SimulatedPeripheral>, filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
         callbackType: number | undefined, addScanResult: ScanResultListener): SimulatedBleError | undefined {
         try {
-            errorIfBluetoothNotSupported(adapterState)
-            errorIfBluetoothNotOn(adapterState)
+            errorIfBluetoothNotSupported(this.getAdapterState())
+            errorIfBluetoothNotOn(this.getAdapterState())
             errorIfScanInProgress(this.isScanInProgress)
 
             this.addScanResult = addScanResult
@@ -32,14 +38,8 @@ export class ScanDelegate {
             })
             this.isScanInProgress = true
         } catch (error) {
-            if (error instanceof SimulatedBleError) {
-                return error
-            } else {
-                console.error(error)
-            }
-
+            return mapErrorToSimulatedBleError(error)
         }
-
     }
 
     stopScan(): void {
@@ -68,8 +68,15 @@ export class ScanDelegate {
     private setAdvertisement(peripheral: SimulatedPeripheral): void {
         const handle = setInterval(
             () => {
-                //TODO should check BT state and throw? or unregister if it's turned off
-                this.addScanResult(peripheral.getScanResult())
+                try {
+                    errorIfBluetoothNotSupported(this.getAdapterState())
+                    errorIfBluetoothNotOn(this.getAdapterState())
+                    this.addScanResult(peripheral.getScanResult())
+                } catch (error) {
+                    const mappedError = mapErrorToSimulatedBleError(error)
+                    this.stopScan()
+                    this.addScanResult(null, mappedError)
+                }
             },
             peripheral.advertisementInterval
         )

@@ -14,20 +14,24 @@ import { DescriptorsDelegate } from './delegates/descriptors-delegate'
 import { mapErrorToSimulatedBleError } from './utils'
 import { errorIfBluetoothNotSupported, errorIfBluetoothNotOn, errorIfNotConnected, errorIfUnknown } from './error_creator'
 
-export type ScanResultListener = (scanResult: ScanResult) => void
+export type ScanResultListener = (scanResult: ScanResult | null, error?: SimulatedBleError) => void
 
 export class SimulationManager {
     private peripherals: Array<SimulatedPeripheral> = []
     private peripheralsById: Map<string, SimulatedPeripheral> = new Map<string, SimulatedPeripheral>()
-    private scanDelegate: ScanDelegate = new ScanDelegate()
-    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate(() => this.getAdapterState())
     private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
-    private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate()
+    private scanDelegate: ScanDelegate = new ScanDelegate(() => this.getAdapterState())
+    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate(() => this.getAdapterState())
+    private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate(() => this.getAdapterState())
     private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState())
     private descriptorsDelegate: DescriptorsDelegate = new DescriptorsDelegate(() => this.getAdapterState())
-    private mtuDelegate: MtuDelegate = new MtuDelegate()
+    private mtuDelegate: MtuDelegate = new MtuDelegate(() => this.getAdapterState())
 
-    setConnectionStatePublisher(publisher: (id: string, state: ConnectionState) => (void)) {
+    clearState() {
+        this.peripherals.forEach((peripheral) => peripheral.onDisconnect())
+    }
+
+    setConnectionStatePublisher(publisher: (id: string, state: ConnectionState, error?: SimulatedBleError) => (void)) {
         this.connectionDelegate.setConnectionStatePublisher(publisher)
     }
 
@@ -43,7 +47,6 @@ export class SimulationManager {
 
     setAdapterState(adapterState: AdapterState) {
         this.adapterStateDelegate.setAdapterState(adapterState)
-        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
     }
 
     getAdapterState(): AdapterState {
@@ -51,7 +54,14 @@ export class SimulationManager {
     }
 
     setAdapterStatePublisher(publisher?: AdapterStateChangeListener) {
-        this.adapterStateDelegate.setAdapterStateChangeListener(publisher)
+        const listener: AdapterStateChangeListener = (newState: AdapterState) => {
+            if (publisher) {
+                publisher(newState)
+            }
+            this.characteristicsDelegate.onAdapterStateChanged(newState)
+            this.connectionDelegate.onAdapterStateChanged(newState, this.peripheralsById)
+        }
+        this.adapterStateDelegate.setAdapterStateChangeListener(listener)
     }
 
     setAdapterStateChangeDelay(delay?: number) {
@@ -65,8 +75,9 @@ export class SimulationManager {
     }
 
     startScan(filteredUuids: Array<UUID> | undefined, scanMode: number | undefined,
-        callbackType: number | undefined, addScanResult: ScanResultListener): SimulatedBleError | undefined {
-        return this.scanDelegate.startScan(this.adapterStateDelegate.getAdapterState(),
+        callbackType: number | undefined, addScanResult: ScanResultListener
+    ): SimulatedBleError | undefined {
+        return this.scanDelegate.startScan(
             this.peripherals, filteredUuids, scanMode, callbackType, addScanResult)
     }
 
@@ -98,18 +109,17 @@ export class SimulationManager {
     }
 
     async connect(peripheralIdentifier: string, requestMtu?: number): Promise<SimulatedBleError | SimulatedPeripheral> {
-        return this.connectionDelegate.connect(this.adapterStateDelegate.getAdapterState(),
+        return this.connectionDelegate.connect(
             this.peripheralsById, peripheralIdentifier, requestMtu)
     }
 
     async disconnect(peripheralIdentifier: string): Promise<SimulatedBleError | undefined> {
-        return this.connectionDelegate.disconnect(this.adapterStateDelegate.getAdapterState(),
+        return this.connectionDelegate.disconnect(
             this.peripheralsById, peripheralIdentifier)
     }
 
     async isDeviceConnected(peripheralIdentifier: string): Promise<SimulatedBleError | boolean> {
         return this.connectionDelegate.isConnected(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById,
             peripheralIdentifier
         );
@@ -141,19 +151,16 @@ export class SimulationManager {
 
     async enable(): Promise<SimulatedBleError | undefined> {
         let result = this.adapterStateDelegate.enable()
-        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
         return result;
     }
 
     async disable(): Promise<SimulatedBleError | undefined> {
         let result = this.adapterStateDelegate.disable()
-        this.characteristicsDelegate.onAdapterStateChange(this.adapterStateDelegate.getAdapterState())
         return result
     }
 
     async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
         return this.mtuDelegate.requestMtu(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById,
             peripheralIdentifier,
             mtu
@@ -162,14 +169,12 @@ export class SimulationManager {
 
     async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
         return this.discoveryDelegate.discovery(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById, peripheralIdentifier
         )
     }
 
     async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristic(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripherals,
             characteristicId
         )
@@ -179,7 +184,6 @@ export class SimulationManager {
         characteristicUuid: UUID
     ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForService(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripherals,
             serviceId,
             characteristicUuid
@@ -190,7 +194,6 @@ export class SimulationManager {
         serviceUuid: UUID, characteristicUuid: UUID
     ): Promise<TransferCharacteristic | SimulatedBleError> {
         return this.characteristicsDelegate.readCharacteristicForDevice(
-            this.adapterStateDelegate.getAdapterState(),
             this.peripheralsById,
             peripheralId,
             serviceUuid,
@@ -248,19 +251,19 @@ export class SimulationManager {
     }
 
     monitorCharacteristic(characteristicId: number, transactionId: string): void {
-        this.characteristicsDelegate.monitorCharacteristic(this.adapterStateDelegate.getAdapterState(),
+        this.characteristicsDelegate.monitorCharacteristic(
             this.peripherals, characteristicId, transactionId);
     }
 
     monitorCharacteristicForService(serviceId: number, characteristicUuid: UUID, transactionId: string): void {
-        this.characteristicsDelegate.monitorCharacteristicForService(this.adapterStateDelegate.getAdapterState(),
+        this.characteristicsDelegate.monitorCharacteristicForService(
             this.peripherals, serviceId, characteristicUuid, transactionId)
     }
 
     monitorCharacteristicForDevice(peripheralId: string,
         serviceUuid: UUID, characteristicUuid: UUID, transactionId: string
     ): void {
-        this.characteristicsDelegate.monitorCharacteristicForDevice(this.adapterStateDelegate.getAdapterState(),
+        this.characteristicsDelegate.monitorCharacteristicForDevice(
             this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, transactionId)
     }
 

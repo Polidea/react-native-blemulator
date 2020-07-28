@@ -17,6 +17,10 @@ public class ScanResultParser {
     static final boolean IS_CONNECTABLE_IS_IOS_ONLY = false;
 
     public static ScanResult parse(ReadableMap scanResult) {
+        if (scanResult == null) {
+            return null;
+        }
+
         String id = scanResult.getString(NativeArgumentName.ID);
         String name = scanResult.hasKey(NativeArgumentName.NAME) ? scanResult.getString(NativeArgumentName.NAME) : null;
         int rssi = scanResult.getInt(NativeArgumentName.RSSI);
@@ -43,7 +47,7 @@ public class ScanResultParser {
             overflowServiceUuids = overflowServiceUuidsList.toArray(new UUID[overflowServiceUuidsList.size()]);
         }
 
-        ScanResult result = new ScanResult(
+        return new ScanResult(
                 id,
                 name,
                 rssi,
@@ -59,6 +63,5 @@ public class ScanResultParser {
                         ReadableArrayToListParser.parse(jsSolicitedServiceUuids)
                 )
         );
-        return result;
     }
 }
