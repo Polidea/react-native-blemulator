@@ -44,4 +44,6 @@ public interface MethodName {
     String WRITE_DESCRIPTOR_FOR_CHARACTERISTIC = "writeDescriptorForCharacteristic";
     String WRITE_DESCRIPTOR_FOR_SERVICE = "writeDescriptorForService";
     String WRITE_DESCRIPTOR_FOR_DEVICE = "writeDescriptorForDevice";
+
+    String CANCEL_TRANSACTION = "cancelTransaction";
 }

@@ -1,20 +1,23 @@
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
 import { SimulatedPeripheral } from "../../simulated-peripheral";
-import { errorIfUnknown, errorIfConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported, errorIfPeripheralNotConnected, errorIfPeripheralDisconnected } from "../error_creator";
+import { errorIfUnknown, errorIfConnected, errorIfBluetoothNotOn, errorConnectionFailed, errorIfBluetoothNotSupported, errorIfPeripheralNotConnected, errorIfPeripheralDisconnected, errorIfOperationCancelled } from "../error_creator";
 import { AdapterState, ConnectionState, Subscription } from "../../types";
 import { Platform } from 'react-native';
 import { MAX_iOS_MTU } from './mtu-delegate'
 import { mapErrorToSimulatedBleError } from "../utils";
+import { TransactionMonitor } from "../transaction-monitor";
 
 
 export class ConnectionDelegate {
+    private transactionMonitor: TransactionMonitor
     private connectionStatePublisher: ((id: string, state: ConnectionState) => void) | undefined = undefined
     private connectionStateSubscriptions: Map<string, Subscription> = new Map()
     private pendingDisconnections: Map<string, boolean> = new Map()
     private getAdapterState: () => AdapterState
 
-    constructor(getAdapterState: () => AdapterState) {
+    constructor(getAdapterState: () => AdapterState, transactionMonitor: TransactionMonitor) {
         this.getAdapterState = getAdapterState
+        this.transactionMonitor = transactionMonitor
     }
 
     onAdapterStateChanged(adapterState: AdapterState, peripherals: Map<string, SimulatedPeripheral>) {
@@ -150,6 +153,7 @@ export class ConnectionDelegate {
         connectionPriority: number,
         transactionId: string
     ): Promise<SimulatedBleError | SimulatedPeripheral> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const peripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
 
@@ -157,6 +161,7 @@ export class ConnectionDelegate {
             errorIfBluetoothNotOn(this.getAdapterState())
             errorIfUnknown(peripherals, peripheralId)
             errorIfPeripheralNotConnected(peripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, { peripheralId: peripheralId })
 
             if (Platform.OS === 'android') {
                 await peripheral!.onConnectionPriorityRequested(connectionPriority)
@@ -165,9 +170,12 @@ export class ConnectionDelegate {
             errorIfBluetoothNotSupported(this.getAdapterState())
             errorIfBluetoothNotOn(this.getAdapterState())
             errorIfPeripheralDisconnected(peripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, { peripheralId: peripheralId })
             return peripheral!
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 }

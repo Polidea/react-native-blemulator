@@ -15,16 +15,20 @@ import {
     errorIfDescriptorNotFound,
     errorIfDescriptorNotWritable,
     errorIfPayloadTooLarge,
-    errorIfPayloadMalformed
+    errorIfPayloadMalformed,
+    errorIfOperationCancelled
 } from "../error_creator";
 import { SimulatedDescriptor } from "../../simulated-descriptor";
 import { MAX_MTU } from "./mtu-delegate";
+import { TransactionMonitor } from "../transaction-monitor";
 
 export class DescriptorsDelegate {
     private getAdapterState: () => AdapterState
+    private transactionMonitor: TransactionMonitor
 
-    constructor(getAdapterState: () => AdapterState) {
+    constructor(getAdapterState: () => AdapterState, transactionMonitor: TransactionMonitor) {
         this.getAdapterState = getAdapterState
+        this.transactionMonitor = transactionMonitor
     }
 
     async readDescriptor(
@@ -32,14 +36,23 @@ export class DescriptorsDelegate {
         descriptorId: number,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithDescriptor(peripherals, descriptorId)
             errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
             const descriptor: SimulatedDescriptor = matchedPeripheral!.getDescriptor(descriptorId)!
-            return this.readAndMapDescriptor(descriptor, matchedPeripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor.characteristic?.service?.uuid,
+                characteristicUuid: descriptor.characteristic?.uuid,
+                descriptorUuid: descriptor.uuid
+            })
+            return await this.readAndMapDescriptor(descriptor, matchedPeripheral!, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -49,6 +62,7 @@ export class DescriptorsDelegate {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicId)
@@ -56,9 +70,17 @@ export class DescriptorsDelegate {
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForCharacteristic(characteristicId, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.readAndMapDescriptor(descriptor!, matchedPeripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.readAndMapDescriptor(descriptor!, matchedPeripheral!, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -69,6 +91,7 @@ export class DescriptorsDelegate {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceId)
@@ -76,9 +99,17 @@ export class DescriptorsDelegate {
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForService(serviceId, characteristicUuid, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.readAndMapDescriptor(descriptor!, matchedPeripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.readAndMapDescriptor(descriptor!, matchedPeripheral!, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -90,20 +121,29 @@ export class DescriptorsDelegate {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
             errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForCharacteristicAndService(serviceUuid, characteristicUuid, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.readAndMapDescriptor(descriptor!, matchedPeripheral!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.readAndMapDescriptor(descriptor!, matchedPeripheral!, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
     private async readAndMapDescriptor(
-        descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral
+        descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral, transactionId: string, internalTransactionId: number
     ): Promise<TransferDescriptor> {
         errorIfDescriptorNotReadable(descriptor)
         const value: Base64 = await descriptor.read()
@@ -116,6 +156,12 @@ export class DescriptorsDelegate {
             descriptorUuid: descriptor.uuid
         })
         errorIfPayloadMalformed(value)
+        errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor, {
+            peripheralId: peripheral.id,
+            serviceUuid: descriptor?.characteristic?.service?.uuid,
+            characteristicUuid: descriptor?.characteristic?.uuid,
+            descriptorUuid: descriptor?.uuid
+        })
         const readDescriptor: TransferDescriptor = mapToTransferDescriptor(descriptor, peripheral.id, value)
         return readDescriptor
     }
@@ -129,15 +175,24 @@ export class DescriptorsDelegate {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
             errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForCharacteristicAndService(serviceUuid, characteristicUuid, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -149,6 +204,7 @@ export class DescriptorsDelegate {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceId)
@@ -156,9 +212,17 @@ export class DescriptorsDelegate {
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForService(serviceId, characteristicUuid, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -169,6 +233,7 @@ export class DescriptorsDelegate {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicId)
@@ -176,9 +241,17 @@ export class DescriptorsDelegate {
             const descriptor: SimulatedDescriptor | undefined
                 = matchedPeripheral!.getDescriptorForCharacteristic(characteristicId, descriptorUuid)
             errorIfDescriptorNotFound(descriptor)
-            return this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.writeAndMapDescriptor(descriptor!, matchedPeripheral!, value, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -188,19 +261,28 @@ export class DescriptorsDelegate {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             const matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithDescriptor(peripherals, descriptorId)
             errorChecksForAccessToGatt(this.getAdapterState(), matchedPeripheral)
             const descriptor: SimulatedDescriptor = matchedPeripheral!.getDescriptor(descriptorId)!
-            return this.writeAndMapDescriptor(descriptor, matchedPeripheral!, value)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: descriptor?.characteristic?.service?.uuid,
+                characteristicUuid: descriptor?.characteristic?.uuid,
+                descriptorUuid: descriptor?.uuid
+            })
+            return await this.writeAndMapDescriptor(descriptor, matchedPeripheral!, value, transactionId, internalId)
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
     private async writeAndMapDescriptor(
-        descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral, value: Base64
+        descriptor: SimulatedDescriptor, peripheral: SimulatedPeripheral, value: Base64, transactionId: string, internalTransactionId: number
     ): Promise<TransferDescriptor> {
         errorIfDescriptorNotWritable(descriptor)
         errorIfPayloadTooLarge(
@@ -212,6 +294,12 @@ export class DescriptorsDelegate {
         errorIfPayloadMalformed(value)
         await descriptor.write(value)
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
+        errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor, {
+            peripheralId: peripheral.id,
+            serviceUuid: descriptor?.characteristic?.service?.uuid,
+            characteristicUuid: descriptor?.characteristic?.uuid,
+            descriptorUuid: descriptor?.uuid
+        })
         return mapToTransferDescriptor(descriptor, peripheral.id, value)
     }
 }

@@ -1,7 +1,9 @@
 import { AdapterState } from "../../types";
 import { SimulatedBleError, BleErrorCode } from "../../ble-error";
-import { delay } from "../utils";
+import { delay, mapErrorToSimulatedBleError } from "../utils";
 import { Platform } from "react-native";
+import { TransactionMonitor } from "../transaction-monitor";
+import { errorIfNotAndroid, errorIfBluetoothNotSupported, errorIfOperationCancelled } from "../error_creator";
 
 
 const bluetoothUnsupportedErrorCreator = () => {
@@ -17,6 +19,11 @@ export class AdapterStateDelegate {
     private adapterState: AdapterState = AdapterState.POWERED_ON
     private delay?: number
     private listener?: AdapterStateChangeListener
+    private transactionMonitor: TransactionMonitor
+
+    constructor(transactionMonitor: TransactionMonitor) {
+        this.transactionMonitor = transactionMonitor
+    }
 
     setAdapterState(adapterState: AdapterState) {
         this.onAdapterStateChanged(adapterState)
@@ -37,58 +44,56 @@ export class AdapterStateDelegate {
         }
     }
 
-    async enable(): Promise<SimulatedBleError | undefined> {
-        if (Platform.OS !== 'android') {
-            return new SimulatedBleError({
-                errorCode: BleErrorCode.BluetoothStateChangeFailed,
-                message: "Platform doesn't support this functionality",
-            })
-        }
+    async enable(transactionId: string): Promise<SimulatedBleError | undefined> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
+        try {
+            errorIfNotAndroid()
+            errorIfBluetoothNotSupported(this.adapterState)
+            if (this.adapterState === AdapterState.POWERED_ON) {
+                throw new SimulatedBleError({
+                    errorCode: BleErrorCode.BluetoothStateChangeFailed,
+                    message: "Couldn't set Bluetooth adapter's state to POWERED_ON",
+                })
+            }
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor)
 
-        if (this.adapterState === AdapterState.UNSUPPORTED) {
-            return bluetoothUnsupportedErrorCreator()
-        }
+            this.onAdapterStateChanged(AdapterState.RESETTING)
 
-        if (this.adapterState === AdapterState.POWERED_ON) {
-            return new SimulatedBleError({
-                errorCode: BleErrorCode.BluetoothStateChangeFailed,
-                message: "Couldn't set Bluetooth adapter's state to POWERED_ON",
-            })
+            if (this.delay) {
+                await delay(this.delay)
+            }
+            this.onAdapterStateChanged(AdapterState.POWERED_ON)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
-
-        this.onAdapterStateChanged(AdapterState.RESETTING)
-
-        if (this.delay) {
-            await delay(this.delay)
-        }
-        this.onAdapterStateChanged(AdapterState.POWERED_ON)
     }
 
-    async disable(): Promise<SimulatedBleError | undefined> {
-        if (Platform.OS !== 'android') {
-            return new SimulatedBleError({
-                errorCode: BleErrorCode.BluetoothStateChangeFailed,
-                message: "Platform doesn't support this functionality",
-            })
-        }
+    async disable(transactionId: string): Promise<SimulatedBleError | undefined> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
+        try {
+            errorIfNotAndroid()
+            errorIfBluetoothNotSupported(this.adapterState)
+            if (this.adapterState === AdapterState.POWERED_OFF) {
+                throw new SimulatedBleError({
+                    errorCode: BleErrorCode.BluetoothStateChangeFailed,
+                    message: "Couldn't set Bluetooth adapter's state to POWERED_OFF",
+                })
+            }
 
-        if (this.adapterState === AdapterState.UNSUPPORTED) {
-            return bluetoothUnsupportedErrorCreator()
-        }
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor)
+            this.onAdapterStateChanged(AdapterState.RESETTING)
 
-        if (this.adapterState === AdapterState.POWERED_OFF) {
-            return new SimulatedBleError({
-                errorCode: BleErrorCode.BluetoothStateChangeFailed,
-                message: "Couldn't set Bluetooth adapter's state to POWERED_OFF",
-            })
+            if (this.delay) {
+                await delay(this.delay)
+            }
+            this.onAdapterStateChanged(AdapterState.POWERED_OFF)
+        } catch (error) {
+            return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
-
-        this.onAdapterStateChanged(AdapterState.RESETTING)
-
-        if (this.delay) {
-            await delay(this.delay)
-        }
-        this.onAdapterStateChanged(AdapterState.POWERED_OFF)
     }
 
     private onAdapterStateChanged(newValue: AdapterState) {

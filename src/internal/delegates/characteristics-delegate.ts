@@ -12,11 +12,13 @@ import {
     errorChecksAfterOperation,
     errorIfPayloadTooLarge,
     errorIfPayloadMalformed,
+    errorIfOperationCancelled,
 } from "../error_creator";
 import { SimulatedCharacteristic } from "../../simulated-characteristic";
 import { TransferCharacteristic, mapToTransferCharacteristic } from "../internal-types";
 import { findPeripheralWithService, findPeripheralWithCharacteristic, mapErrorToSimulatedBleError, trimValueToMtu } from "../utils";
 import { MAX_MTU } from "./mtu-delegate";
+import { TransactionMonitor } from "../transaction-monitor";
 
 export class CharacteristicsDelegate {
     private readonly getAdapterState: () => AdapterState
@@ -24,10 +26,12 @@ export class CharacteristicsDelegate {
         transactionId: string,
         characteristic: TransferCharacteristic | null, error?: SimulatedBleError
     ) => void = () => { }
-    private notificationSubscriptions: Map<string, Subscription> = new Map()
+    private notificationSubscriptions: Map<string, { subscription: Subscription, internalTransactionId: number }> = new Map()
+    private transactionMonitor: TransactionMonitor
 
-    constructor(getAdapterState: () => AdapterState) {
+    constructor(getAdapterState: () => AdapterState, transactionMonitor: TransactionMonitor) {
         this.getAdapterState = getAdapterState
+        this.transactionMonitor = transactionMonitor
     }
 
     setNotificationPublisher(
@@ -52,9 +56,9 @@ export class CharacteristicsDelegate {
                         : BleErrorCode.BluetoothResetting,
                 message: 'Bluetooth state changed'
             })
-            this.notificationSubscriptions.forEach((subscription, transactionId) => {
+            this.notificationSubscriptions.forEach((subscriptionHolder, transactionId) => {
                 this.notificationPublisher(transactionId, null, error)
-                subscription.dispose()
+                subscriptionHolder?.subscription.dispose()
                 this.notificationSubscriptions.delete(transactionId)
             })
         }
@@ -62,8 +66,10 @@ export class CharacteristicsDelegate {
 
     async readCharacteristic(
         peripherals: Array<SimulatedPeripheral>,
-        characteristicIdentifier: number
+        characteristicIdentifier: number,
+        transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
@@ -73,20 +79,32 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic
                 = matchedPeripheral!.getCharacteristic(characteristicIdentifier)!
 
-            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+
+            return await this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
-                matchedPeripheral!
+                matchedPeripheral!,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
     async readCharacteristicForService(
         peripherals: Array<SimulatedPeripheral>,
         serviceIdentifier: number,
-        characteristicUuid: UUID
+        characteristicUuid: UUID,
+        transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceIdentifier)
@@ -96,13 +114,21 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic | undefined =
                 matchedPeripheral!.getService(serviceIdentifier)?.getCharacteristicByUuid(characteristicUuid)
             errorIfCharacteristicNotFound(characteristic)
-
-            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            return await this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
-                matchedPeripheral!
+                matchedPeripheral!,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -110,8 +136,10 @@ export class CharacteristicsDelegate {
         peripherals: Map<string, SimulatedPeripheral>,
         peripheralIdentifier: string,
         serviceUuid: UUID,
-        characteristicUuid: UUID
+        characteristicUuid: UUID,
+        transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined
                 = peripherals.get(peripheralIdentifier)
@@ -121,19 +149,29 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic | undefined
                 = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
             errorIfCharacteristicNotFound(characteristic)
-
-            return this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            return await this.readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
-                matchedPeripheral!
+                matchedPeripheral!,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
     private async readAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
         characteristic: SimulatedCharacteristic,
-        peripheral: SimulatedPeripheral
+        peripheral: SimulatedPeripheral,
+        transactionId: string,
+        internalTransactionId: number
     ): Promise<TransferCharacteristic> {
 
         errorIfCharacteristicNotReadable(characteristic!)
@@ -148,6 +186,12 @@ export class CharacteristicsDelegate {
         })
         errorIfPayloadMalformed(value)
 
+        errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor, {
+            peripheralId: peripheral?.id,
+            serviceUuid: characteristic?.service?.uuid,
+            characteristicUuid: characteristic?.uuid
+        })
+
         const returnedCharacteristic: TransferCharacteristic
             = mapToTransferCharacteristic(characteristic!, peripheral.id, value)
         return returnedCharacteristic
@@ -159,6 +203,7 @@ export class CharacteristicsDelegate {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicIdentifier)
@@ -167,14 +212,22 @@ export class CharacteristicsDelegate {
 
             let characteristic: SimulatedCharacteristic
                 = matchedPeripheral!.getCharacteristic(characteristicIdentifier)!
-
-            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            return await this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic,
                 matchedPeripheral!,
-                value, withResponse
+                value, withResponse,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -186,6 +239,7 @@ export class CharacteristicsDelegate {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceIdentifier)
@@ -195,14 +249,22 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic | undefined =
                 matchedPeripheral!.getService(serviceIdentifier)?.getCharacteristicByUuid(characteristicUuid)
             errorIfCharacteristicNotFound(characteristic)
-
-            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            return await this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
                 matchedPeripheral!,
-                value, withResponse
+                value, withResponse,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -215,6 +277,7 @@ export class CharacteristicsDelegate {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined
                 = peripherals.get(peripheralIdentifier)
@@ -224,14 +287,22 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic | undefined
                 = matchedPeripheral!.getCharacteristicForService(serviceUuid, characteristicUuid)
             errorIfCharacteristicNotFound(characteristic)
-
-            return this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            return await this.writeAndMapCharacteristicWithCheckForReadabilityAndDisconnection(
                 characteristic!,
                 matchedPeripheral!,
-                value, withResponse
+                value, withResponse,
+                transactionId,
+                internalId
             )
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalId)
         }
     }
 
@@ -239,7 +310,9 @@ export class CharacteristicsDelegate {
         characteristic: SimulatedCharacteristic,
         peripheral: SimulatedPeripheral,
         value: Base64,
-        withResponse: boolean
+        withResponse: boolean,
+        transactionId: string,
+        internalTransactionId: number
     ): Promise<TransferCharacteristic> {
         if (withResponse) {
             errorIfNotWritableWithResponse(characteristic)
@@ -258,6 +331,12 @@ export class CharacteristicsDelegate {
 
         errorChecksAfterOperation(this.getAdapterState(), peripheral)
 
+        errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor, {
+            peripheralId: peripheral?.id,
+            serviceUuid: characteristic?.service?.uuid,
+            characteristicUuid: characteristic?.uuid
+        })
+
         return mapToTransferCharacteristic(characteristic, peripheral.id, value)
     }
 
@@ -266,6 +345,7 @@ export class CharacteristicsDelegate {
         characteristicId: number,
         transactionId: string
     ): void {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithCharacteristic(peripherals, characteristicId)
@@ -275,10 +355,14 @@ export class CharacteristicsDelegate {
             let characteristic: SimulatedCharacteristic
                 = matchedPeripheral!.getCharacteristic(characteristicId)!
             errorIfNotMonitorable(characteristic)
-
-            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!, internalId)
         } catch (error) {
-            this.handleMonitoringError(transactionId, error)
+            this.handleMonitoringError(transactionId, error, internalId)
         }
     }
 
@@ -288,6 +372,7 @@ export class CharacteristicsDelegate {
         characteristicUuid: UUID,
         transactionId: string
     ): void {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | null
                 = findPeripheralWithService(peripherals, serviceId)
@@ -299,10 +384,14 @@ export class CharacteristicsDelegate {
 
             errorIfCharacteristicNotFound(characteristic)
             errorIfNotMonitorable(characteristic!)
-
-            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!, internalId)
         } catch (error) {
-            this.handleMonitoringError(transactionId, error)
+            this.handleMonitoringError(transactionId, error, internalId)
         }
     }
 
@@ -313,6 +402,7 @@ export class CharacteristicsDelegate {
         characteristicUuid: UUID,
         transactionId: string
     ): void {
+        const internalId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             let matchedPeripheral: SimulatedPeripheral | undefined = peripherals.get(peripheralId)
 
@@ -323,25 +413,36 @@ export class CharacteristicsDelegate {
             errorIfCharacteristicNotFound(characteristic)
             errorIfNotMonitorable(characteristic!)
 
-            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!)
+            errorIfOperationCancelled(transactionId, internalId, this.transactionMonitor, {
+                peripheralId: matchedPeripheral?.id,
+                serviceUuid: characteristic?.service?.uuid,
+                characteristicUuid: characteristic?.uuid
+            })
+            this.handleSubscription(transactionId, matchedPeripheral!, characteristic!, internalId)
         } catch (error) {
-            this.handleMonitoringError(transactionId, error)
+            this.handleMonitoringError(transactionId, error, internalId)
         }
     }
 
     private handleSubscription(transactionId: string,
         matchedPeripheral: SimulatedPeripheral,
-        characteristic: SimulatedCharacteristic
+        characteristic: SimulatedCharacteristic,
+        internalTransactionId: number
     ) {
         if (this.notificationSubscriptions.has(transactionId)) {
             //No cancellation error thrown here, since it was handled already in native
-            this.notificationSubscriptions.get(transactionId)?.dispose()
+            this.notificationSubscriptions.get(transactionId)?.subscription?.dispose()
             this.notificationSubscriptions.delete(transactionId)
         }
 
         const subscription: Subscription = characteristic.monitor((newValue) => {
             try {
                 errorIfPeripheralDisconnected(matchedPeripheral!)
+                errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor, {
+                    peripheralId: matchedPeripheral?.id,
+                    serviceUuid: characteristic?.service?.uuid,
+                    characteristicUuid: characteristic?.uuid
+                })
                 errorIfPayloadTooLarge(
                     newValue,
                     matchedPeripheral.getMtu() - 3,
@@ -360,13 +461,13 @@ export class CharacteristicsDelegate {
                     )
                 )
             } catch (error) {
-                this.handleMonitoringError(transactionId, error)
+                this.handleMonitoringError(transactionId, error, internalTransactionId)
             }
         }, { setNotifying: true })
-        this.notificationSubscriptions.set(transactionId, subscription)
+        this.notificationSubscriptions.set(transactionId, { subscription: subscription, internalTransactionId: internalTransactionId })
     }
 
-    private handleMonitoringError(transactionId: string, error: any) {
+    private handleMonitoringError(transactionId: string, error: any, internalTransactionId: number) {
         if (error instanceof SimulatedBleError) {
             this.notificationPublisher(transactionId, null, error)
         } else {
@@ -376,19 +477,20 @@ export class CharacteristicsDelegate {
                 )
             )
         }
-
-        this.notificationSubscriptions.get(transactionId)?.dispose()
+        this.transactionMonitor.clearTransaction(transactionId, internalTransactionId)
+        this.notificationSubscriptions.get(transactionId)?.subscription?.dispose()
         this.notificationSubscriptions.delete(transactionId)
     }
 
     private handlePotentialMonitoringCancellation(transactionId: string) {
         if (this.notificationSubscriptions.has(transactionId)) {
-            this.notificationSubscriptions.get(transactionId)?.dispose()
+            this.notificationSubscriptions.get(transactionId)?.subscription?.dispose()
             this.notificationPublisher(transactionId, null,
                 new SimulatedBleError(
                     { errorCode: BleErrorCode.OperationCancelled, message: "Transaction replaced" }
                 )
             )
+            this.transactionMonitor.clearTransaction(transactionId, this.notificationSubscriptions.get(transactionId)!.internalTransactionId)
             this.notificationSubscriptions.delete(transactionId)
         }
     }

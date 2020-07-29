@@ -59,6 +59,7 @@ enum MethodName {
     WRITE_DESCRIPTOR_FOR_CHARACTERISTIC = "writeDescriptorForCharacteristic",
     WRITE_DESCRIPTOR_FOR_SERVICE = "writeDescriptorForService",
     WRITE_DESCRIPTOR_FOR_DEVICE = "writeDescriptorForDevice",
+    CANCEL_TRANSACTION = "cancelTransaction"
 }
 
 export class Bridge {
@@ -181,6 +182,9 @@ export class Bridge {
             case MethodName.WRITE_DESCRIPTOR_FOR_DEVICE:
                 this.writeDescriptorForDevice(args)
                 break
+            case MethodName.CANCEL_TRANSACTION:
+                this.cancelTransaction(args)
+                break
             default:
                 console.error("Uknown method requested")
         }
@@ -202,14 +206,22 @@ export class Bridge {
     }
 
     private async enable(args: MethodCallArguments) {
-        //TODO handle transactionId (store it in some object in the map to be able to flip it to cancelled)
-        const error = await this.manager.enable()
+        const enableArgs = args as MethodCallArguments & {
+            arguments: {
+                transactionId: string
+            }
+        }
+        const error = await this.manager.enable(enableArgs.arguments.transactionId)
         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
     }
 
     private async disable(args: MethodCallArguments) {
-        //TODO handle transactionId (store it in some object in the map to be able to flip it to cancelled)
-        const error = await this.manager.disable()
+        const disableArgs = args as MethodCallArguments & {
+            arguments: {
+                transactionId: string
+            }
+        }
+        const error = await this.manager.disable(disableArgs.arguments.transactionId)
         blemulatorModule.handleReturnCall(args.callbackId, { error: error })
     }
 
@@ -357,15 +369,32 @@ export class Bridge {
 
     private async requestMtu(args: MethodCallArguments) {
         let mtuResult: SimulatedBleError | number
-        const requestMtuArgs = args as MethodCallArguments & { arguments: { identifier: string, mtu: number } }
-        mtuResult = await this.manager.requestMtu(requestMtuArgs.arguments.identifier, requestMtuArgs.arguments.mtu)
+        const requestMtuArgs = args as MethodCallArguments & {
+            arguments: {
+                identifier: string,
+                mtu: number,
+                transactionId: string
+            }
+        }
+        mtuResult = await this.manager.requestMtu(
+            requestMtuArgs.arguments.identifier,
+            requestMtuArgs.arguments.mtu,
+            requestMtuArgs.arguments.transactionId
+        )
         this.callbackErrorOrValue(args.callbackId, mtuResult)
     }
 
     private async discovery(args: MethodCallArguments) {
-        //TODO handle transactionId (store it in some object in the map to be able to flip it to cancelled)
-        const discoveryArgs = args as MethodCallArguments & { arguments: { identifier: string } }
-        const discoveryResult = await this.manager.discovery(discoveryArgs.arguments.identifier)
+        const discoveryArgs = args as MethodCallArguments & {
+            arguments: {
+                identifier: string,
+                transactionId: string
+            }
+        }
+        const discoveryResult = await this.manager.discovery(
+            discoveryArgs.arguments.identifier,
+            discoveryArgs.arguments.transactionId
+        )
         if (discoveryResult instanceof SimulatedBleError) {
             blemulatorModule.handleReturnCall(args.callbackId, { error: discoveryResult })
         } else {
@@ -380,7 +409,10 @@ export class Bridge {
             arguments: { characteristicId: number, transactionId: string }
         }
         const readCharacteristicResult: SimulatedBleError | TransferCharacteristic
-            = await this.manager.readCharacteristic(readCharacteristicArgs.arguments.characteristicId)
+            = await this.manager.readCharacteristic(
+                readCharacteristicArgs.arguments.characteristicId,
+                readCharacteristicArgs.arguments.transactionId
+            )
         this.callbackErrorOrValue(args.callbackId, readCharacteristicResult)
     }
 
@@ -391,7 +423,8 @@ export class Bridge {
         const readCharacteristicForServiceResult: SimulatedBleError | TransferCharacteristic
             = await this.manager.readCharacteristicForService(
                 readCharacteristicForServiceArgs.arguments.serviceId,
-                readCharacteristicForServiceArgs.arguments.characteristicUuid
+                readCharacteristicForServiceArgs.arguments.characteristicUuid,
+                readCharacteristicForServiceArgs.arguments.transactionId
             )
         this.callbackErrorOrValue(args.callbackId, readCharacteristicForServiceResult)
     }
@@ -404,7 +437,8 @@ export class Bridge {
             = await this.manager.readCharacteristicForDevice(
                 readCharacteristicForDeviceArgs.arguments.identifier,
                 readCharacteristicForDeviceArgs.arguments.serviceUuid,
-                readCharacteristicForDeviceArgs.arguments.characteristicUuid
+                readCharacteristicForDeviceArgs.arguments.characteristicUuid,
+                readCharacteristicForDeviceArgs.arguments.transactionId
             )
         this.callbackErrorOrValue(args.callbackId, readCharacteristicForDeviceResult)
     }
@@ -663,6 +697,17 @@ export class Bridge {
             writeDescriptorForDeviceArgs.arguments.transactionId
         )
         this.callbackErrorOrValue(args.callbackId, writeDescriptorForDeviceResult)
+    }
+
+    private cancelTransaction(args: MethodCallArguments) {
+        const cancelArgs = args as MethodCallArguments & {
+            arguments: {
+                transactionId: string
+            }
+        }
+
+        this.manager.cancelTransaction(cancelArgs.arguments.transactionId)
+        blemulatorModule.handleReturnCall(args.callbackId, {})
     }
 
     private callbackErrorOrValue(callbackId: string, result: SimulatedBleError | any) {
