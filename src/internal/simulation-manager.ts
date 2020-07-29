@@ -129,6 +129,7 @@ export class SimulationManager {
     }
 
     async readRssi(peripheralIdentifier: string, transactionId: string): Promise<SimulatedBleError | SimulatedPeripheral> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         const internalTransactionId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             errorIfBluetoothNotSupported(this.adapterStateDelegate.getAdapterState())
