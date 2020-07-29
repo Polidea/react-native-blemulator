@@ -61,6 +61,7 @@ public class PlatformToJsBridge {
     public void enable(String transactionId, final OnSuccessCallback<Void> successCallback, final OnErrorCallback errorCallback) {
         WritableMap args = Arguments.createMap();
         args.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
         callMethod(MethodName.ENABLE, args,
                 new JsCallHandler.Callback() {
                     @Override
@@ -78,6 +79,7 @@ public class PlatformToJsBridge {
     public void disable(String transactionId, final OnSuccessCallback<Void> successCallback, final OnErrorCallback errorCallback) {
         WritableMap args = Arguments.createMap();
         args.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
         callMethod(MethodName.DISABLE, args,
                 new JsCallHandler.Callback() {
                     @Override
@@ -295,11 +297,14 @@ public class PlatformToJsBridge {
 
     public void requestMtu(final String deviceIdentifier,
                            final int mtu,
+                           String transactionId,
                            final OnSuccessCallback<Integer> onSuccessCallback,
                            final OnErrorCallback onErrorCallback) {
         WritableMap arguments = Arguments.createMap();
         arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
         arguments.putInt(JsArgumentName.MTU, mtu);
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
         callMethod(
                 MethodName.REQUEST_MTU,
                 arguments,
@@ -323,6 +328,7 @@ public class PlatformToJsBridge {
         WritableMap arguments = Arguments.createMap();
         arguments.putString(JsArgumentName.IDENTIFIER, deviceIdentifier);
         arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
         callMethod(
                 MethodName.DISCOVERY,
                 arguments,
@@ -656,6 +662,21 @@ public class PlatformToJsBridge {
         callMethod(MethodName.WRITE_DESCRIPTOR,
                 arguments,
                 createCallbackReturningDescriptorOrError(successCallback, errorCallback)
+        );
+    }
+
+    public void cancelTransaction(String transactionId) {
+        WritableMap arguments = Arguments.createMap();
+        arguments.putString(JsArgumentName.TRANSACTION_ID, transactionId);
+
+        callMethod(MethodName.CANCEL_TRANSACTION,
+                arguments,
+                new JsCallHandler.Callback() {
+                    @Override
+                    public void invoke(ReadableMap args) {
+                        //there can't be any error or success
+                    }
+                }
         );
     }
 

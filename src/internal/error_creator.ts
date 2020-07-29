@@ -3,6 +3,8 @@ import { SimulatedBleError, BleErrorCode } from "../ble-error";
 import { AdapterState, Base64, UUID } from "../types";
 import { SimulatedCharacteristic } from "../simulated-characteristic";
 import { SimulatedDescriptor } from "../simulated-descriptor";
+import { TransactionMonitor } from "./transaction-monitor";
+import { Platform } from "react-native";
 
 export function errorIfScanInProgress(isScanInProgress: boolean): void {
     if (isScanInProgress) {
@@ -236,7 +238,7 @@ export function errorIfDescriptorNotWritable(descriptor: SimulatedDescriptor): v
 }
 
 export function errorIfPayloadMalformed(value: Base64) {
-    if (value.length % 4 !=0) {
+    if (value.length % 4 != 0) {
         const error: Error = new Error('Value is in incorrect format, Base64 string\'s length must be divisible by 4')
         throw error
     }
@@ -271,5 +273,38 @@ export function errorIfPayloadTooLarge(
         }
     } else if (payloadSizeInBytes > lowerLimit) {
         console.warn(`Payload's (${payload}) size (${payloadSizeInBytes}) might be exceeding the limit (${mtu}) for this kind of operation`)
+    }
+}
+
+export function errorIfOperationCancelled(
+    transactionId: string,
+    internalTransactionId: number,
+    transactionMonitor: TransactionMonitor,
+    optionalArgs?: {
+        descriptorUuid?: UUID,
+        characteristicUuid?: UUID,
+        serviceUuid?: UUID,
+        peripheralId?: string
+    }
+) {
+    if (transactionMonitor.isTransactionCancelled(transactionId, internalTransactionId)) {
+        const error: SimulatedBleError = new SimulatedBleError({
+            errorCode: BleErrorCode.OperationCancelled,
+            message: 'Operation cancelled',
+            deviceId: optionalArgs?.peripheralId,
+            descriptorUuid: optionalArgs?.descriptorUuid,
+            characteristicUuid: optionalArgs?.characteristicUuid,
+            serviceUuid: optionalArgs?.serviceUuid
+        })
+        throw error
+    }
+}
+
+export function errorIfNotAndroid() {
+    if (Platform.OS !== 'android') {
+        return new SimulatedBleError({
+            errorCode: BleErrorCode.BluetoothStateChangeFailed,
+            message: "Platform doesn't support this functionality",
+        })
     }
 }

@@ -12,23 +12,26 @@ import { TransferCharacteristic, TransferDescriptor } from './internal-types'
 import { MtuDelegate } from './delegates/mtu-delegate'
 import { DescriptorsDelegate } from './delegates/descriptors-delegate'
 import { mapErrorToSimulatedBleError } from './utils'
-import { errorIfBluetoothNotSupported, errorIfBluetoothNotOn, errorIfNotConnected, errorIfUnknown } from './error_creator'
+import { errorIfBluetoothNotSupported, errorIfBluetoothNotOn, errorIfNotConnected, errorIfUnknown, errorIfOperationCancelled } from './error_creator'
+import { TransactionMonitor } from './transaction-monitor'
 
 export type ScanResultListener = (scanResult: ScanResult | null, error?: SimulatedBleError) => void
 
 export class SimulationManager {
     private peripherals: Array<SimulatedPeripheral> = []
     private peripheralsById: Map<string, SimulatedPeripheral> = new Map<string, SimulatedPeripheral>()
-    private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate()
+    private transactionMonitor: TransactionMonitor = new TransactionMonitor()
+    private adapterStateDelegate: AdapterStateDelegate = new AdapterStateDelegate(this.transactionMonitor)
     private scanDelegate: ScanDelegate = new ScanDelegate(() => this.getAdapterState())
-    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate(() => this.getAdapterState())
-    private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate(() => this.getAdapterState())
-    private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState())
-    private descriptorsDelegate: DescriptorsDelegate = new DescriptorsDelegate(() => this.getAdapterState())
-    private mtuDelegate: MtuDelegate = new MtuDelegate(() => this.getAdapterState())
+    private connectionDelegate: ConnectionDelegate = new ConnectionDelegate(() => this.getAdapterState(), this.transactionMonitor)
+    private discoveryDelegate: DiscoveryDelegate = new DiscoveryDelegate(() => this.getAdapterState(), this.transactionMonitor)
+    private characteristicsDelegate: CharacteristicsDelegate = new CharacteristicsDelegate(() => this.getAdapterState(), this.transactionMonitor)
+    private descriptorsDelegate: DescriptorsDelegate = new DescriptorsDelegate(() => this.getAdapterState(), this.transactionMonitor)
+    private mtuDelegate: MtuDelegate = new MtuDelegate(() => this.getAdapterState(), this.transactionMonitor)
 
     clearState() {
         this.peripherals.forEach((peripheral) => peripheral.onDisconnect())
+        this.transactionMonitor.clearAllTransactions()
     }
 
     setConnectionStatePublisher(publisher: (id: string, state: ConnectionState, error?: SimulatedBleError) => (void)) {
@@ -126,14 +129,19 @@ export class SimulationManager {
     }
 
     async readRssi(peripheralIdentifier: string, transactionId: string): Promise<SimulatedBleError | SimulatedPeripheral> {
+        const internalTransactionId = this.transactionMonitor.registerTransaction(transactionId)
         try {
             errorIfBluetoothNotSupported(this.adapterStateDelegate.getAdapterState())
             errorIfBluetoothNotOn(this.adapterStateDelegate.getAdapterState())
             errorIfUnknown(this.peripheralsById, peripheralIdentifier)
             errorIfNotConnected(this.peripheralsById, peripheralIdentifier)
+            errorIfOperationCancelled(transactionId, internalTransactionId, this.transactionMonitor)
+
             return this.peripheralsById.get(peripheralIdentifier)!
         } catch (error) {
             return mapErrorToSimulatedBleError(error)
+        } finally {
+            this.transactionMonitor.clearTransaction(transactionId, internalTransactionId)
         }
     }
 
@@ -141,6 +149,7 @@ export class SimulationManager {
         connectionPriority: number,
         transactionId: string
     ): Promise<SimulatedBleError | SimulatedPeripheral> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.connectionDelegate.requestConnectionPriority(
             this.peripheralsById,
             peripheralId,
@@ -149,55 +158,68 @@ export class SimulationManager {
         )
     }
 
-    async enable(): Promise<SimulatedBleError | undefined> {
-        let result = this.adapterStateDelegate.enable()
+    async enable(transactionId: string): Promise<SimulatedBleError | undefined> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
+        let result = this.adapterStateDelegate.enable(transactionId)
         return result;
     }
 
-    async disable(): Promise<SimulatedBleError | undefined> {
-        let result = this.adapterStateDelegate.disable()
+    async disable(transactionId: string): Promise<SimulatedBleError | undefined> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
+        let result = this.adapterStateDelegate.disable(transactionId)
         return result
     }
 
-    async requestMtu(peripheralIdentifier: string, mtu: number): Promise<SimulatedBleError | number> {
+    async requestMtu(peripheralIdentifier: string, mtu: number, transactionId: string): Promise<SimulatedBleError | number> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.mtuDelegate.requestMtu(
             this.peripheralsById,
             peripheralIdentifier,
-            mtu
+            mtu,
+            transactionId
         )
     }
 
-    async discovery(peripheralIdentifier: string): Promise<SimulatedBleError | Array<SimulatedService>> {
+    async discovery(peripheralIdentifier: string, transactionId: string): Promise<SimulatedBleError | Array<SimulatedService>> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.discoveryDelegate.discovery(
-            this.peripheralsById, peripheralIdentifier
+            this.peripheralsById, peripheralIdentifier, transactionId
         )
     }
 
-    async readCharacteristic(characteristicId: number): Promise<TransferCharacteristic | SimulatedBleError> {
+    async readCharacteristic(characteristicId: number, transactionId: string): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.readCharacteristic(
             this.peripherals,
-            characteristicId
+            characteristicId,
+            transactionId
         )
     }
 
     async readCharacteristicForService(serviceId: number,
-        characteristicUuid: UUID
+        characteristicUuid: UUID,
+        transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.readCharacteristicForService(
             this.peripherals,
             serviceId,
-            characteristicUuid
+            characteristicUuid,
+            transactionId
         )
     }
 
     async readCharacteristicForDevice(peripheralId: string,
-        serviceUuid: UUID, characteristicUuid: UUID
+        serviceUuid: UUID, characteristicUuid: UUID,
+        transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.readCharacteristicForDevice(
             this.peripheralsById,
             peripheralId,
             serviceUuid,
-            characteristicUuid
+            characteristicUuid,
+            transactionId
         )
     }
 
@@ -206,6 +228,7 @@ export class SimulationManager {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.writeCharacteristic(
             this.peripherals,
             characteristicId,
@@ -221,6 +244,7 @@ export class SimulationManager {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.writeCharacteristicForService(
             this.peripherals,
             serviceId,
@@ -239,6 +263,7 @@ export class SimulationManager {
         withResponse: boolean,
         transactionId: string
     ): Promise<TransferCharacteristic | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.characteristicsDelegate.writeCharacteristicForDevice(
             this.peripheralsById,
             peripheralId,
@@ -271,6 +296,7 @@ export class SimulationManager {
         descriptorId: number,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.readDescriptor(this.peripherals, descriptorId, transactionId)
     }
 
@@ -279,6 +305,7 @@ export class SimulationManager {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.readDescriptorForCharacteristic(
             this.peripherals, characteristicId, descriptorUuid, transactionId
         )
@@ -290,6 +317,7 @@ export class SimulationManager {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.readDescriptorForService(
             this.peripherals, serviceId, characteristicUuid, descriptorUuid, transactionId
         )
@@ -302,6 +330,7 @@ export class SimulationManager {
         descriptorUuid: UUID,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.readDescriptorForDevice(
             this.peripheralsById, peripheralId, serviceUuid, characteristicUuid, descriptorUuid, transactionId
         )
@@ -315,6 +344,7 @@ export class SimulationManager {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.writeDescriptorForDevice(
             this.peripheralsById,
             peripheralId,
@@ -333,6 +363,7 @@ export class SimulationManager {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.writeDescriptorForService(
             this.peripherals,
             serviceId,
@@ -349,6 +380,7 @@ export class SimulationManager {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.writeDescriptorForCharacteristic(
             this.peripherals,
             characteristicId,
@@ -363,11 +395,16 @@ export class SimulationManager {
         value: Base64,
         transactionId: string
     ): Promise<TransferDescriptor | SimulatedBleError> {
+        this.characteristicsDelegate.onNewTransaction(transactionId)
         return this.descriptorsDelegate.writeDescriptor(
             this.peripherals,
             descriptorId,
             value,
             transactionId
         )
+    }
+
+    cancelTransaction(transactionId: string) {
+        this.transactionMonitor.cancelTransaction(transactionId)
     }
 }

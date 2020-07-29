@@ -177,7 +177,8 @@ public class SimulatedAdapter implements BleAdapter {
 
     @Override
     public void requestMTUForDevice(final String deviceIdentifier,
-                                    int mtu, String transactionId,
+                                    int mtu,
+                                    String transactionId,
                                     final OnSuccessCallback<Device> onSuccessCallback,
                                     OnErrorCallback onErrorCallback) {
         Log.i(TAG, "requestMTUForDevice called, mtu: " + mtu);
@@ -189,7 +190,7 @@ public class SimulatedAdapter implements BleAdapter {
                 onSuccessCallback.onSuccess(device);
             }
         };
-        bridge.requestMtu(deviceIdentifier, mtu, modifiedOnSuccessCallback, onErrorCallback);
+        bridge.requestMtu(deviceIdentifier, mtu, transactionId, modifiedOnSuccessCallback, onErrorCallback);
     }
 
     @Override
@@ -651,6 +652,7 @@ public class SimulatedAdapter implements BleAdapter {
     @Override
     public void cancelTransaction(String transactionId) {
         Log.i(TAG, "cancelTransaction called");
+        bridge.cancelTransaction(transactionId);
     }
 
     @Override
