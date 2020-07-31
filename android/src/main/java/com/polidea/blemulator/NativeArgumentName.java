@@ -16,7 +16,7 @@ public interface NativeArgumentName {
 
     //ScanResult
     String NAME = "name";
-    String RSSI ="rssi";
+    String RSSI = "rssi";
     String TX_POWER_LEVEL = "txPowerLeveL";
     String OVERFLOW_SERVICE_UUIDS = "overflowServiceUuids";
     String SERVICE_DATA = "serviceData";
@@ -40,7 +40,7 @@ public interface NativeArgumentName {
     String DESCRIPTORS = "descriptors";
     String CHARACTERISTIC_ID = "characteristicId";
     String CHARACTERISTIC_UUID = "characteristicUuid";
-    
+
     //RequestMtu
     String MTU = "mtu";
 }
