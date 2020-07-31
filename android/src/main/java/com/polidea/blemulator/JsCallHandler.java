@@ -9,10 +9,6 @@ public class JsCallHandler {
     private int nextCallId = 0;
     private Map<String, Callback> callbacks = new HashMap<>();
 
-    public String getNextCallbackId() {
-        return Integer.toString(nextCallId++);
-    }
-
     public String addCallback(Callback callback) {
         String callId = getNextCallbackId();
         callbacks.put(callId, callback);
@@ -32,7 +28,11 @@ public class JsCallHandler {
         callbacks.remove(id);
     }
 
+    private String getNextCallbackId() {
+        return Integer.toString(nextCallId++);
+    }
+
     interface Callback {
-        void  invoke(ReadableMap args);
+        void invoke(ReadableMap args);
     }
 }
