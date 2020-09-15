@@ -1,9 +1,9 @@
-import { UUID, Base64 } from "./types"
+import { Base64, UUID } from "./types"
 
 export class ScanResult {
-    id: String
-    name?: String
-    localName?: String
+    id: string
+    name?: string | null
+    localName?: string
     isConnectable?: boolean
     manufacturerData?: Base64
     serviceData?: Map<UUID, Base64>
@@ -14,10 +14,10 @@ export class ScanResult {
     rssi: number
 
     constructor({id, isConnectable, name, localName, manufacturerData, serviceData, serviceUuids, solicitedServiceUuids, overflowServiceUuids, txPowerLevel, rssi}: {
-        id: String,
+        id: string,
         isConnectable?: boolean,
-        name?: String,
-        localName?: String,
+        name?: string | null,
+        localName?: string,
         manufacturerData?: Base64,
         serviceData?: Map<UUID, Base64>,
         serviceUuids?: Array<UUID>,

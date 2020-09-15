@@ -1,8 +1,8 @@
-import { AdapterState, UUID } from "../../types"
-import { ScanResultListener } from "../simulation-manager"
-import { SimulatedBleError } from "../../ble-error"
-import { errorIfBluetoothNotOn, errorIfScanInProgress, errorIfBluetoothNotSupported } from "../error_creator"
 import { SimulatedPeripheral } from "../../.."
+import { SimulatedBleError } from "../../ble-error"
+import { AdapterState, UUID } from "../../types"
+import { errorIfBluetoothNotOn, errorIfBluetoothNotSupported, errorIfScanInProgress } from "../error_creator"
+import { ScanResultListener } from "../simulation-manager"
 import { mapErrorToSimulatedBleError } from "../utils"
 
 export class ScanDelegate {
@@ -44,7 +44,8 @@ export class ScanDelegate {
 
     stopScan(): void {
         while (this.advertisementIntervalHandles.length > 0) {
-            clearInterval(this.advertisementIntervalHandles.pop())
+            const intervalHandle = this.advertisementIntervalHandles.pop()
+            intervalHandle && clearInterval(intervalHandle)
         }
         this.addScanResult = () => { }
         this.isScanInProgress = false
