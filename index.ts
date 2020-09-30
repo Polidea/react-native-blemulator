@@ -1,4 +1,5 @@
-export { blemulator, Blemulator } from './src/blemulator';
+export { blemulator } from './src/blemulator';
+export type { Blemulator } from './src/blemulator';
 export * from './src/simulated-descriptor'
 export * from './src/simulated-characteristic'
 export * from './src/simulated-service'
