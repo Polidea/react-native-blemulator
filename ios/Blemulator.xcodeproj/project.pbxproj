@@ -8,6 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		1033FA1B24642D06003B0C50 /* SimulatedAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */; };
+		10C7A84F24D2F94B00BC92D6 /* CachedCharacteristic.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A84E24D2F94B00BC92D6 /* CachedCharacteristic.m */; };
+		10C7A85124D2F95D00BC92D6 /* CachedService.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85024D2F95D00BC92D6 /* CachedService.m */; };
+		10C7A85324D2F96B00BC92D6 /* DeviceContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85224D2F96B00BC92D6 /* DeviceContainer.m */; };
+		10C7A85524D2F97900BC92D6 /* DeviceManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85424D2F97900BC92D6 /* DeviceManager.m */; };
+		10C7A85B24D2FA6300BC92D6 /* DeviceParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85A24D2FA6300BC92D6 /* DeviceParser.m */; };
+		10C7A85D24D2FA7700BC92D6 /* ErrorParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85C24D2FA7700BC92D6 /* ErrorParser.m */; };
+		10C7A85F24D2FA8800BC92D6 /* GattParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A85E24D2FA8800BC92D6 /* GattParser.m */; };
+		10C7A86524D2FB0500BC92D6 /* JsArgumentName.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A86424D2FB0500BC92D6 /* JsArgumentName.m */; };
+		10C7A86724D2FB5E00BC92D6 /* NativeArgumentName.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A86624D2FB5E00BC92D6 /* NativeArgumentName.m */; };
+		10C7A86A24D2FB7500BC92D6 /* MethodName.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A86924D2FB7500BC92D6 /* MethodName.m */; };
+		10C7A86D24D2FBB200BC92D6 /* JsCallHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A86C24D2FBB200BC92D6 /* JsCallHandler.m */; };
+		10C7A87124D2FBDB00BC92D6 /* PlatformToJsBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 10C7A87024D2FBDB00BC92D6 /* PlatformToJsBridge.m */; };
+		10C7A87624D43C9300BC92D6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10C7A87524D43C9300BC92D6 /* Foundation.framework */; };
 		320F8AB317FF97AAD1EA62E8 /* Pods_Blemulator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81432FA2EACC1C10AF962CAB /* Pods_Blemulator.framework */; };
 		B3E7B58A1CC2AC0600A0062D /* Blemulator.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E7B5891CC2AC0600A0062D /* Blemulator.m */; };
 /* End PBXBuildFile section */
@@ -27,6 +40,31 @@
 /* Begin PBXFileReference section */
 		09473796EC6DD87C2E56F92D /* Pods-Blemulator.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Blemulator.debug.xcconfig"; path = "Target Support Files/Pods-Blemulator/Pods-Blemulator.debug.xcconfig"; sourceTree = "<group>"; };
 		1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SimulatedAdapter.m; sourceTree = "<group>"; };
+		10C7A84A24D2F8F600BC92D6 /* CachedCharacteristic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CachedCharacteristic.h; sourceTree = "<group>"; };
+		10C7A84B24D2F90600BC92D6 /* CachedService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CachedService.h; sourceTree = "<group>"; };
+		10C7A84C24D2F91800BC92D6 /* DeviceContainer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DeviceContainer.h; sourceTree = "<group>"; };
+		10C7A84D24D2F92800BC92D6 /* DeviceManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DeviceManager.h; sourceTree = "<group>"; };
+		10C7A84E24D2F94B00BC92D6 /* CachedCharacteristic.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CachedCharacteristic.m; sourceTree = "<group>"; };
+		10C7A85024D2F95D00BC92D6 /* CachedService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CachedService.m; sourceTree = "<group>"; };
+		10C7A85224D2F96B00BC92D6 /* DeviceContainer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DeviceContainer.m; sourceTree = "<group>"; };
+		10C7A85424D2F97900BC92D6 /* DeviceManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DeviceManager.m; sourceTree = "<group>"; };
+		10C7A85724D2FA2700BC92D6 /* DeviceParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DeviceParser.h; sourceTree = "<group>"; };
+		10C7A85824D2FA4100BC92D6 /* ErrorParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ErrorParser.h; sourceTree = "<group>"; };
+		10C7A85924D2FA5200BC92D6 /* GattParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GattParser.h; sourceTree = "<group>"; };
+		10C7A85A24D2FA6300BC92D6 /* DeviceParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DeviceParser.m; sourceTree = "<group>"; };
+		10C7A85C24D2FA7700BC92D6 /* ErrorParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ErrorParser.m; sourceTree = "<group>"; };
+		10C7A85E24D2FA8800BC92D6 /* GattParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GattParser.m; sourceTree = "<group>"; };
+		10C7A86124D2FACC00BC92D6 /* JsArgumentName.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JsArgumentName.h; sourceTree = "<group>"; };
+		10C7A86224D2FAE200BC92D6 /* NativeArgumentName.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeArgumentName.h; sourceTree = "<group>"; };
+		10C7A86324D2FAF400BC92D6 /* MethodName.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MethodName.h; sourceTree = "<group>"; };
+		10C7A86424D2FB0500BC92D6 /* JsArgumentName.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JsArgumentName.m; sourceTree = "<group>"; };
+		10C7A86624D2FB5E00BC92D6 /* NativeArgumentName.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeArgumentName.m; sourceTree = "<group>"; };
+		10C7A86924D2FB7500BC92D6 /* MethodName.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MethodName.m; sourceTree = "<group>"; };
+		10C7A86C24D2FBB200BC92D6 /* JsCallHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JsCallHandler.m; sourceTree = "<group>"; };
+		10C7A87024D2FBDB00BC92D6 /* PlatformToJsBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PlatformToJsBridge.m; sourceTree = "<group>"; };
+		10C7A87224D2FC1900BC92D6 /* JsCallHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JsCallHandler.h; sourceTree = "<group>"; };
+		10C7A87424D2FC4200BC92D6 /* PlatformToJsBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PlatformToJsBridge.h; sourceTree = "<group>"; };
+		10C7A87524D43C9300BC92D6 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		10D74E8F24644F7B00C37BC0 /* SimulatedAdapter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SimulatedAdapter.h; sourceTree = "<group>"; };
 		10D74E91246453F700C37BC0 /* BlemulatorCommonTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BlemulatorCommonTypes.h; sourceTree = "<group>"; };
 		134814201AA4EA6300B7C361 /* libBlemulator.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libBlemulator.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -41,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				10C7A87624D43C9300BC92D6 /* Foundation.framework in Frameworks */,
 				320F8AB317FF97AAD1EA62E8 /* Pods_Blemulator.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -48,6 +87,58 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		10C7A84924D2F8C800BC92D6 /* Containers */ = {
+			isa = PBXGroup;
+			children = (
+				10C7A84A24D2F8F600BC92D6 /* CachedCharacteristic.h */,
+				10C7A84B24D2F90600BC92D6 /* CachedService.h */,
+				10C7A84C24D2F91800BC92D6 /* DeviceContainer.h */,
+				10C7A84D24D2F92800BC92D6 /* DeviceManager.h */,
+				10C7A84E24D2F94B00BC92D6 /* CachedCharacteristic.m */,
+				10C7A85024D2F95D00BC92D6 /* CachedService.m */,
+				10C7A85224D2F96B00BC92D6 /* DeviceContainer.m */,
+				10C7A85424D2F97900BC92D6 /* DeviceManager.m */,
+			);
+			path = Containers;
+			sourceTree = "<group>";
+		};
+		10C7A85624D2FA0D00BC92D6 /* Parsers */ = {
+			isa = PBXGroup;
+			children = (
+				10C7A85724D2FA2700BC92D6 /* DeviceParser.h */,
+				10C7A85824D2FA4100BC92D6 /* ErrorParser.h */,
+				10C7A85924D2FA5200BC92D6 /* GattParser.h */,
+				10C7A85A24D2FA6300BC92D6 /* DeviceParser.m */,
+				10C7A85C24D2FA7700BC92D6 /* ErrorParser.m */,
+				10C7A85E24D2FA8800BC92D6 /* GattParser.m */,
+			);
+			path = Parsers;
+			sourceTree = "<group>";
+		};
+		10C7A86024D2FAB600BC92D6 /* Names */ = {
+			isa = PBXGroup;
+			children = (
+				10C7A86124D2FACC00BC92D6 /* JsArgumentName.h */,
+				10C7A86224D2FAE200BC92D6 /* NativeArgumentName.h */,
+				10C7A86324D2FAF400BC92D6 /* MethodName.h */,
+				10C7A86424D2FB0500BC92D6 /* JsArgumentName.m */,
+				10C7A86624D2FB5E00BC92D6 /* NativeArgumentName.m */,
+				10C7A86924D2FB7500BC92D6 /* MethodName.m */,
+			);
+			path = Names;
+			sourceTree = "<group>";
+		};
+		10C7A86B24D2FB9000BC92D6 /* Bridging */ = {
+			isa = PBXGroup;
+			children = (
+				10C7A86C24D2FBB200BC92D6 /* JsCallHandler.m */,
+				10C7A87024D2FBDB00BC92D6 /* PlatformToJsBridge.m */,
+				10C7A87224D2FC1900BC92D6 /* JsCallHandler.h */,
+				10C7A87424D2FC4200BC92D6 /* PlatformToJsBridge.h */,
+			);
+			path = Bridging;
+			sourceTree = "<group>";
+		};
 		10D74E90246453DC00C37BC0 /* Util */ = {
 			isa = PBXGroup;
 			children = (
@@ -67,6 +158,10 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				10C7A86B24D2FB9000BC92D6 /* Bridging */,
+				10C7A86024D2FAB600BC92D6 /* Names */,
+				10C7A85624D2FA0D00BC92D6 /* Parsers */,
+				10C7A84924D2F8C800BC92D6 /* Containers */,
 				10D74E90246453DC00C37BC0 /* Util */,
 				10D74E8F24644F7B00C37BC0 /* SimulatedAdapter.h */,
 				1033FA1A24642D06003B0C50 /* SimulatedAdapter.m */,
@@ -90,6 +185,7 @@
 		C0CA31E543A1A53F13864080 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				10C7A87524D43C9300BC92D6 /* Foundation.framework */,
 				81432FA2EACC1C10AF962CAB /* Pods_Blemulator.framework */,
 			);
 			name = Frameworks;
@@ -178,8 +274,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				10C7A84F24D2F94B00BC92D6 /* CachedCharacteristic.m in Sources */,
+				10C7A86A24D2FB7500BC92D6 /* MethodName.m in Sources */,
+				10C7A86724D2FB5E00BC92D6 /* NativeArgumentName.m in Sources */,
+				10C7A87124D2FBDB00BC92D6 /* PlatformToJsBridge.m in Sources */,
+				10C7A86D24D2FBB200BC92D6 /* JsCallHandler.m in Sources */,
+				10C7A85524D2F97900BC92D6 /* DeviceManager.m in Sources */,
+				10C7A85324D2F96B00BC92D6 /* DeviceContainer.m in Sources */,
 				1033FA1B24642D06003B0C50 /* SimulatedAdapter.m in Sources */,
 				B3E7B58A1CC2AC0600A0062D /* Blemulator.m in Sources */,
+				10C7A85F24D2FA8800BC92D6 /* GattParser.m in Sources */,
+				10C7A85B24D2FA6300BC92D6 /* DeviceParser.m in Sources */,
+				10C7A85124D2F95D00BC92D6 /* CachedService.m in Sources */,
+				10C7A86524D2FB0500BC92D6 /* JsArgumentName.m in Sources */,
+				10C7A85D24D2FA7700BC92D6 /* ErrorParser.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
